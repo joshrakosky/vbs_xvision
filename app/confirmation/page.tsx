@@ -2,7 +2,6 @@
 
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import VBSLogo from '@/components/VBSLogo'
 import AdminExportButton from '@/components/AdminExportButton'
 import HelpIcon from '@/components/HelpIcon'
 import CartIcon from '@/components/CartIcon'
@@ -31,9 +30,6 @@ export default function ConfirmationPage() {
       <div className="min-h-screen bg-gradient-to-br from-purple-50 to-indigo-50 flex items-center justify-center px-4 relative">
         <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
         <div className="mb-6">
-          <div className="mb-4 flex justify-center">
-            <VBSLogo className="text-2xl mb-4" />
-          </div>
           <div className="text-6xl mb-4">✅</div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">{t('orderConfirmed')}</h1>
           <p className="text-gray-600">
