@@ -2,36 +2,22 @@
 
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
-import StrykerLogo from '@/components/StrykerLogo'
+import VBSLogo from '@/components/VBSLogo'
 import AdminExportButton from '@/components/AdminExportButton'
 import HelpIcon from '@/components/HelpIcon'
+import { useLanguage } from '@/lib/languageContext'
 
-// Allowed email addresses (case-insensitive)
+// Allowed email addresses (case-insensitive) - whitelist for VB Spine access
 const ALLOWED_EMAILS = [
-  'abhishek.choudhary01@stryker.com',
-  'ruchika.sikri@stryker.com',
-  'ravindra.singh@stryker.com',
-  'sunil.malodia@stryker.com',
-  'shaun.wernette@stryker.com',
-  'diane.riepl@stryker.com',
-  'heather.maurer@stryker.com',
-  'raghu.birru@stryker.com',
-  'roger.pluijm@stryker.com',
-  'patrice.poirier@stryker.com',
-  'cindy.lutz@stryker.com',
-  'debatra.sengupta@stryker.com',
-  'khadiza.hussain@stryker.com',
-  'shalini.ramesh@stryker.com',
-  'michelle.yarger@stryker.com',
-  'john.rossman@stryker.com',
-  'epaphra.sattenapalli@stryker.com',
-  'bobby.dack@stryker.com'
+  'josh.rakosky@proforma.com'
+  // Add more whitelisted emails here as needed
 ]
 
 const ADMIN_EMAIL = 'josh.rakosky@proforma.com'
 
 export default function LandingPage() {
   const router = useRouter()
+  const { language, setLanguage, t } = useLanguage()
   const [email, setEmail] = useState('')
   const [error, setError] = useState('')
 
@@ -39,7 +25,7 @@ export default function LandingPage() {
     e.preventDefault()
     
     if (!email) {
-      setError('Please enter your email address')
+      setError(t('emailRequired'))
       return
     }
 
@@ -60,7 +46,7 @@ export default function LandingPage() {
     )
 
     if (!isAllowed) {
-      setError('This email is not authorized to access the site. Please contact support.')
+      setError(t('emailNotAuthorized'))
       return
     }
 
@@ -73,26 +59,43 @@ export default function LandingPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-amber-50 to-yellow-50 px-4 relative">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-indigo-50 px-4 relative">
       <AdminExportButton />
       <HelpIcon />
       <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8">
-        <div className="text-center mb-8">
-          <div className="mb-4 flex justify-center">
-            <StrykerLogo className="text-3xl" />
+        <div className="text-center mb-6">
+          <div className="mb-3 flex justify-center">
+            <VBSLogo className="text-xl" />
           </div>
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">
-            Enterprise Digital and Technology
-          </h1>
+          
+          {/* Language Toggle */}
+          <div className="mb-3 flex justify-center items-center gap-3">
+            <span className={`text-sm font-medium ${language === 'en' ? 'text-gray-900' : 'text-gray-400'}`}>EN</span>
+            <button
+              type="button"
+              onClick={() => setLanguage(language === 'en' ? 'fr' : 'en')}
+              className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#663399] focus:ring-offset-2"
+              style={{ backgroundColor: language === 'en' ? '#663399' : '#D9C2FF' }}
+              aria-label="Toggle language"
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                  language === 'en' ? 'translate-x-1' : 'translate-x-6'
+                }`}
+              />
+            </button>
+            <span className={`text-sm font-medium ${language === 'fr' ? 'text-gray-900' : 'text-gray-400'}`}>FR</span>
+          </div>
+
           <p className="text-gray-600">
-            Enter your email to start shopping
+            {t('enterEmail')}
           </p>
         </div>
 
         <form onSubmit={handleStart} className="space-y-6">
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-              Email
+              {t('email')}
             </label>
             <input
               type="email"
@@ -102,8 +105,8 @@ export default function LandingPage() {
                 setEmail(e.target.value)
                 setError('')
               }}
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#ffb500] focus:border-transparent text-black bg-white"
-              placeholder="Enter your email"
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#663399] focus:border-transparent text-black bg-white"
+              placeholder={t('emailPlaceholder')}
               required
             />
             {error && (
@@ -113,10 +116,10 @@ export default function LandingPage() {
 
           <button
             type="submit"
-            className="w-full text-black py-3 px-4 rounded-md hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-[#ffb500] focus:ring-offset-2 transition-colors font-medium"
-            style={{ backgroundColor: '#ffb500' }}
+            className="w-full text-white py-3 px-4 rounded-md hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-[#663399] focus:ring-offset-2 transition-colors font-medium"
+            style={{ backgroundColor: '#663399' }}
           >
-            Start Shopping →
+            {t('startShopping')}
           </button>
         </form>
       </div>

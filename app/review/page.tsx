@@ -2,59 +2,56 @@
 
 import { useRouter } from 'next/navigation'
 import { useState, useEffect } from 'react'
-import { supabase } from '@/lib/supabase'
-import StrykerLogo from '@/components/StrykerLogo'
 import AdminExportButton from '@/components/AdminExportButton'
 import HelpIcon from '@/components/HelpIcon'
+import CartIcon from '@/components/CartIcon'
+import { useLanguage } from '@/lib/languageContext'
+
+interface CartItem {
+  productId: string
+  productName: string
+  price: number
+  color?: string
+  size?: string
+  isYetiKit?: boolean
+  yeti8ozColor?: string
+  yeti26ozColor?: string
+  yeti35ozColor?: string
+}
 
 export default function ReviewPage() {
   const router = useRouter()
-  const [product, setProduct] = useState<any>(null)
-  const [productData, setProductData] = useState<any>(null)
+  const { t } = useLanguage()
+  const [cart, setCart] = useState<CartItem[]>([])
   const [shipping, setShipping] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
 
   useEffect(() => {
-    // Check if email, product selection, and shipping exist
     const email = sessionStorage.getItem('orderEmail')
-    const productData = sessionStorage.getItem('product')
+    const cartData = sessionStorage.getItem('product')
     const shippingData = sessionStorage.getItem('shipping')
     
-    if (!email || !productData || !shippingData) {
+    if (!email || !cartData || !shippingData) {
       router.push('/')
       return
     }
 
-    // Parse stored data
-    const parsedProduct = JSON.parse(productData)
-    const parsedShipping = JSON.parse(shippingData)
-
-    setProduct(parsedProduct)
-    setShipping(parsedShipping)
-
-    // Load product details
-    loadProduct(parsedProduct.productId)
-  }, [router])
-
-  const loadProduct = async (productId: string) => {
     try {
-      const { data, error } = await supabase
-        .from('syk_edt_products')
-        .select('*')
-        .eq('id', productId)
-        .single()
+      const parsedCart = JSON.parse(cartData)
+      const parsedShipping = JSON.parse(shippingData)
 
-      if (error) throw error
-
-      setProductData(data)
-    } catch (err: any) {
-      setError(err.message || 'Failed to load product information')
+      // Handle both array (cart) and single product formats
+      setCart(Array.isArray(parsedCart) ? parsedCart : [parsedCart])
+      setShipping(parsedShipping)
+    } catch (e) {
+      router.push('/')
+      return
     } finally {
       setLoading(false)
     }
-  }
+  }, [router])
 
   const handleSubmit = async () => {
     setError('')
@@ -63,7 +60,6 @@ export default function ReviewPage() {
     try {
       const email = sessionStorage.getItem('orderEmail')!
 
-      // Submit order to API
       const response = await fetch('/api/orders', {
         method: 'POST',
         headers: {
@@ -72,7 +68,7 @@ export default function ReviewPage() {
         body: JSON.stringify({
           email,
           shipping,
-          product
+          product: cart // Send cart array
         }),
       })
 
@@ -83,11 +79,11 @@ export default function ReviewPage() {
 
       const orderData = await response.json()
       
-      // Store order number for confirmation page
       sessionStorage.setItem('orderNumber', orderData.order_number)
       
       // Clear selections
       sessionStorage.removeItem('product')
+      sessionStorage.removeItem('cart')
       sessionStorage.removeItem('shipping')
       
       router.push('/confirmation')
@@ -96,6 +92,8 @@ export default function ReviewPage() {
       setSubmitting(false)
     }
   }
+
+  const total = cart.reduce((sum, item) => sum + item.price, 0)
 
   if (loading) {
     return (
@@ -106,15 +104,17 @@ export default function ReviewPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-50 to-yellow-50 py-12 px-4 relative">
+    <>
+      {/* Fixed position icons - rendered outside relative container */}
       <AdminExportButton />
       <HelpIcon />
-      <div className="max-w-3xl mx-auto">
+      <CartIcon />
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-indigo-50 py-12 px-4 relative">
+        <div className="max-w-3xl mx-auto">
         <div className="bg-white rounded-lg shadow-lg p-8">
           <div className="mb-6">
-            <StrykerLogo className="text-2xl mb-2" />
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Review Your Order</h1>
-              <p className="text-gray-600">Please review your product selection and shipping information before submitting, and feel free to screenshot this information for your convenience.</p>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">{t('reviewOrder')}</h1>
+            <p className="text-gray-600">{t('reviewInfo')}</p>
           </div>
 
           {error && (
@@ -123,46 +123,49 @@ export default function ReviewPage() {
             </div>
           )}
 
-          {/* Product Section */}
+          {/* Products Section */}
           <div className="mb-6 pb-6 border-b">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Selected Product</h2>
-            {productData && (
-              <div className="bg-gray-50 rounded-lg p-4">
-                {product.isYetiKit || productData.name === 'YETI Kit' ? (
-                  <div className="space-y-3">
-                    <p className="font-medium text-gray-900">{productData.name}</p>
-                    <div className="mt-2 pt-2 border-t border-gray-200">
-                      <p className="text-xs font-medium text-gray-600 mb-2">Kit Items:</p>
-                      <ul className="text-sm text-gray-600 space-y-2">
-                        <li className="flex justify-between">
-                          <span>• YETI Rambler 8oz Stackable Cup</span>
-                          <span className="font-medium">{product.yeti8ozColor || 'Not selected'}</span>
-                        </li>
-                        <li className="flex justify-between">
-                          <span>• YETI Rambler 26oz Straw Bottle</span>
-                          <span className="font-medium">{product.yeti26ozColor || 'Not selected'}</span>
-                        </li>
-                        <li className="flex justify-between">
-                          <span>• YETI Rambler 35oz Tumbler with Straw Lid</span>
-                          <span className="font-medium">{product.yeti35ozColor || 'Not selected'}</span>
-                        </li>
-                      </ul>
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">{t('selectedProducts')} ({cart.length})</h2>
+            <div className="space-y-3">
+              {cart.map((item, index) => (
+                <div key={index} className="bg-gray-50 rounded-lg p-4">
+                  {item.isYetiKit ? (
+                    <div className="space-y-2">
+                      <p className="font-medium text-gray-900">{item.productName}</p>
+                      <div className="mt-2 pt-2 border-t border-gray-200">
+                        <p className="text-xs font-medium text-gray-600 mb-2">Kit Items:</p>
+                        <ul className="text-sm text-gray-600 space-y-1">
+                          <li>• YETI Rambler 8oz Stackable Cup - {item.yeti8ozColor}</li>
+                          <li>• YETI Rambler 26oz Straw Bottle - {item.yeti26ozColor}</li>
+                          <li>• YETI Rambler 35oz Tumbler with Straw Lid - {item.yeti35ozColor}</li>
+                        </ul>
+                      </div>
+                      <p className="text-sm font-medium text-gray-900 mt-2">${item.price.toFixed(2)}</p>
                     </div>
-                  </div>
-                ) : (
-                  <>
-                    <p className="font-medium text-gray-900">{productData.name}</p>
-                    {product.color && <p className="text-sm text-gray-600">Color: {product.color}</p>}
-                    {product.size && <p className="text-sm text-gray-600">Size: {product.size}</p>}
-                  </>
-                )}
+                  ) : (
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="font-medium text-gray-900">{item.productName}</p>
+                        {item.color && <p className="text-sm text-gray-600">Color: {item.color}</p>}
+                        {item.size && <p className="text-sm text-gray-600">Size: {item.size}</p>}
+                      </div>
+                      <p className="text-sm font-medium text-gray-900">${item.price.toFixed(2)}</p>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+            <div className="mt-4 pt-4 border-t border-gray-200">
+              <div className="flex justify-between text-lg font-bold">
+                <span>{t('total')}:</span>
+                <span style={{ color: '#663399' }}>${total.toFixed(2)}</span>
               </div>
-            )}
+            </div>
           </div>
 
           {/* Shipping Information Section */}
           <div className="mb-6 pb-6 border-b">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Shipping Information</h2>
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">{t('shippingInfo')}</h2>
             <div className="bg-gray-50 rounded-lg p-4">
               <p className="font-medium text-gray-900">{shipping.email}</p>
               <p className="font-medium text-gray-900">{shipping.name}</p>
@@ -187,15 +190,15 @@ export default function ReviewPage() {
             <button
               onClick={handleSubmit}
               disabled={submitting}
-              className="px-6 py-2 text-black rounded-md hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-[#ffb500] focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
-              style={{ backgroundColor: '#ffb500' }}
+              className="px-6 py-2 text-white rounded-md hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-[#663399] focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+              style={{ backgroundColor: '#663399' }}
             >
-              {submitting ? 'Submitting...' : 'Submit Order →'}
+              {submitting ? t('submitting') : t('submitOrder')}
             </button>
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   )
 }
-

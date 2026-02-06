@@ -2,12 +2,15 @@
 
 import { useRouter } from 'next/navigation'
 import { useState, useEffect } from 'react'
-import StrykerLogo from '@/components/StrykerLogo'
 import AdminExportButton from '@/components/AdminExportButton'
 import HelpIcon from '@/components/HelpIcon'
+import CartIcon from '@/components/CartIcon'
+import { useLanguage } from '@/lib/languageContext'
+import { FIXED_SHIPPING_ADDRESS } from '@/lib/shippingConfig'
 
 export default function ShippingPage() {
   const router = useRouter()
+  const { t } = useLanguage()
   const [formData, setFormData] = useState({
     email: '',
     name: '',
@@ -35,19 +38,47 @@ export default function ShippingPage() {
       return
     }
 
-    // Pre-populate email from authentication
+    // Pre-populate shipping info with fixed address (read-only except for name)
     const savedShipping = sessionStorage.getItem('shipping')
     if (savedShipping) {
       try {
         const parsedShipping = JSON.parse(savedShipping)
-        setFormData({ ...parsedShipping, email: userEmail })
+        // Keep saved name if exists, otherwise use empty (user needs to fill it)
+        setFormData({ 
+          email: userEmail,
+          name: parsedShipping.name || '',
+          address: FIXED_SHIPPING_ADDRESS.address,
+          address2: FIXED_SHIPPING_ADDRESS.address2,
+          city: FIXED_SHIPPING_ADDRESS.city,
+          state: FIXED_SHIPPING_ADDRESS.state,
+          zip: FIXED_SHIPPING_ADDRESS.zip,
+          country: FIXED_SHIPPING_ADDRESS.country
+        })
       } catch (e) {
-        // If parsing fails, use userEmail
-        setFormData(prev => ({ ...prev, email: userEmail }))
+        // If parsing fails, use fixed address with userEmail
+        setFormData({ 
+          email: userEmail,
+          name: '',
+          address: FIXED_SHIPPING_ADDRESS.address,
+          address2: FIXED_SHIPPING_ADDRESS.address2,
+          city: FIXED_SHIPPING_ADDRESS.city,
+          state: FIXED_SHIPPING_ADDRESS.state,
+          zip: FIXED_SHIPPING_ADDRESS.zip,
+          country: FIXED_SHIPPING_ADDRESS.country
+        })
       }
     } else {
-      // Set email from authentication
-      setFormData(prev => ({ ...prev, email: userEmail }))
+      // Set email from authentication and fixed address
+      setFormData({ 
+        email: userEmail,
+        name: '',
+        address: FIXED_SHIPPING_ADDRESS.address,
+        address2: FIXED_SHIPPING_ADDRESS.address2,
+        city: FIXED_SHIPPING_ADDRESS.city,
+        state: FIXED_SHIPPING_ADDRESS.state,
+        zip: FIXED_SHIPPING_ADDRESS.zip,
+        country: FIXED_SHIPPING_ADDRESS.country
+      })
     }
   }, [router])
 
@@ -55,14 +86,14 @@ export default function ShippingPage() {
     e.preventDefault()
     setError('')
 
-    // Validate required fields
+    // Validate required fields - only name is required from user
     if (!formData.email || !formData.email.includes('@')) {
-      setError('Please enter a valid email address')
+      setError(t('validEmail'))
       return
     }
 
-    if (!formData.name || !formData.address || !formData.city || !formData.state || !formData.zip) {
-      setError('Please fill in all required fields')
+    if (!formData.name) {
+      setError('Please enter your full name for distribution purposes.')
       return
     }
 
@@ -85,15 +116,17 @@ export default function ShippingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-50 to-yellow-50 py-12 px-4 relative">
+    <>
+      {/* Fixed position icons - rendered outside relative container */}
       <AdminExportButton />
       <HelpIcon />
-      <div className="max-w-2xl mx-auto">
+      <CartIcon />
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-indigo-50 py-12 px-4 relative">
+        <div className="max-w-2xl mx-auto">
         <div className="bg-white rounded-lg shadow-lg p-8">
           <div className="mb-6">
-            <StrykerLogo className="text-2xl mb-2" />
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Shipping Information</h1>
-            <p className="text-gray-600">Please provide your shipping details</p>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">{t('shippingInfo')}</h1>
+            <p className="text-gray-600 mb-4">{t('shippingInstructions')}</p>
           </div>
 
           {error && (
@@ -105,7 +138,7 @@ export default function ShippingPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                Email Address <span className="text-red-500">*</span>
+                {t('emailAddress')} <span className="text-red-500">*</span>
               </label>
               <input
                 type="email"
@@ -116,12 +149,12 @@ export default function ShippingPage() {
                 className="w-full px-4 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-600 cursor-not-allowed"
                 placeholder="your.email@example.com"
               />
-              <p className="mt-1 text-xs text-gray-500">Email is set from your login</p>
+              <p className="mt-1 text-xs text-gray-500">{t('emailSetFromLogin')}</p>
             </div>
 
             <div>
               <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-                Full Name <span className="text-red-500">*</span>
+                {t('fullName')} <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -130,36 +163,35 @@ export default function ShippingPage() {
                 value={formData.name}
                 onChange={handleChange}
                 required
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#ffb500] focus:border-transparent text-black bg-white"
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#663399] focus:border-transparent text-black bg-white"
               />
             </div>
 
             <div>
               <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-1">
-                Street Address <span className="text-red-500">*</span>
+                {t('streetAddress')}
               </label>
               <input
                 type="text"
                 id="address"
                 name="address"
                 value={formData.address}
-                onChange={handleChange}
-                required
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#ffb500] focus:border-transparent text-black bg-white"
+                readOnly
+                className="w-full px-4 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-600 cursor-not-allowed"
               />
             </div>
 
             <div>
               <label htmlFor="address2" className="block text-sm font-medium text-gray-700 mb-1">
-                Address Line 2
+                {t('addressLine2')}
               </label>
               <input
                 type="text"
                 id="address2"
                 name="address2"
                 value={formData.address2}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#ffb500] focus:border-transparent text-black bg-white"
+                readOnly
+                className="w-full px-4 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-600 cursor-not-allowed"
                 placeholder="Apartment, suite, unit, building, floor, etc."
               />
             </div>
@@ -167,31 +199,29 @@ export default function ShippingPage() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label htmlFor="city" className="block text-sm font-medium text-gray-700 mb-1">
-                  City <span className="text-red-500">*</span>
+                  {t('city')}
                 </label>
                 <input
                   type="text"
                   id="city"
                   name="city"
                   value={formData.city}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#ffb500] focus:border-transparent text-black bg-white"
+                  readOnly
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-600 cursor-not-allowed"
                 />
               </div>
 
               <div>
                 <label htmlFor="state" className="block text-sm font-medium text-gray-700 mb-1">
-                  State <span className="text-red-500">*</span>
+                  {t('state')}
                 </label>
                 <input
                   type="text"
                   id="state"
                   name="state"
                   value={formData.state}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#ffb500] focus:border-transparent text-black bg-white"
+                  readOnly
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-600 cursor-not-allowed"
                 />
               </div>
             </div>
@@ -199,29 +229,28 @@ export default function ShippingPage() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label htmlFor="zip" className="block text-sm font-medium text-gray-700 mb-1">
-                  ZIP Code <span className="text-red-500">*</span>
+                  ZIP Code
                 </label>
                 <input
                   type="text"
                   id="zip"
                   name="zip"
                   value={formData.zip}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#ffb500] focus:border-transparent text-black bg-white"
+                  readOnly
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-600 cursor-not-allowed"
                 />
               </div>
 
               <div>
                 <label htmlFor="country" className="block text-sm font-medium text-gray-700 mb-1">
-                  Country
+                  {t('country')}
                 </label>
                 <select
                   id="country"
                   name="country"
                   value={formData.country}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#ffb500] focus:border-transparent text-black bg-white"
+                  disabled
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-600 cursor-not-allowed"
                 >
                   <option value="USA">USA</option>
                   <option value="Canada">Canada</option>
@@ -241,16 +270,17 @@ export default function ShippingPage() {
             </button>
               <button
                 type="submit"
-                className="px-6 py-2 text-black rounded-md hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-[#ffb500] focus:ring-offset-2 font-medium"
-                style={{ backgroundColor: '#ffb500' }}
+                className="px-6 py-2 text-white rounded-md hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-[#663399] focus:ring-offset-2 font-medium"
+                style={{ backgroundColor: '#663399' }}
               >
-                Continue to Review →
+                {t('continueReview')}
               </button>
             </div>
           </form>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   )
 }
 

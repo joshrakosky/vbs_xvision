@@ -10,8 +10,8 @@ export default function HelpIcon() {
       {/* Help Icon */}
       <button
         onClick={() => setShowHelp(true)}
-        className="absolute top-4 left-4 w-10 h-10 rounded-full flex items-center justify-center text-black font-bold text-lg transition-opacity shadow-md z-40 hover:opacity-90"
-        style={{ backgroundColor: '#ffb500' }}
+        className="fixed top-4 left-4 w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-lg transition-opacity shadow-md z-40 hover:opacity-90"
+        style={{ backgroundColor: '#663399' }}
         aria-label="Help"
       >
         ?
@@ -33,7 +33,7 @@ export default function HelpIcon() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-2xl font-bold text-gray-900">Help & Contact</h2>
+              <h2 className="text-2xl font-bold" style={{ color: '#663399' }}>Help & Contact</h2>
               <button
                 onClick={() => setShowHelp(false)}
                 className="text-gray-500 hover:text-gray-700 text-2xl font-bold"
@@ -44,28 +44,31 @@ export default function HelpIcon() {
             </div>
             <div className="space-y-4">
               <div>
-                <p className="text-sm text-gray-600 mb-2">For site questions:</p>
+                <p className="text-sm mb-2" style={{ color: '#663399' }}>For site questions:</p>
                 <a 
                   href="mailto:mpp.ecomm@proforma.com"
-                  className="text-[#ffb500] hover:underline font-medium"
+                  className="hover:underline font-medium"
+                  style={{ color: '#663399' }}
                 >
                   mpp.ecomm@proforma.com
                 </a>
               </div>
               <div>
-                <p className="text-sm text-gray-600 mb-2">For order questions:</p>
+                <p className="text-sm mb-2" style={{ color: '#663399' }}>For order questions:</p>
                 <a 
                   href="mailto:metroinfo@proforma.com"
-                  className="text-[#ffb500] hover:underline font-medium"
+                  className="hover:underline font-medium"
+                  style={{ color: '#663399' }}
                 >
                   metroinfo@proforma.com
                 </a>
               </div>
               <div>
-                <p className="text-sm text-gray-600 mb-2">Phone:</p>
+                <p className="text-sm mb-2" style={{ color: '#663399' }}>Phone:</p>
                 <a 
                   href="tel:317-885-0077"
-                  className="text-[#ffb500] hover:underline font-medium"
+                  className="hover:underline font-medium"
+                  style={{ color: '#663399' }}
                 >
                   317-885-0077
                 </a>

@@ -1,4 +1,4 @@
-// Type definitions for the Stryker Christmas Store
+// Type definitions for VB Spine
 
 export interface Product {
   id: string
@@ -15,6 +15,7 @@ export interface Product {
   available_colors?: string[]
   available_sizes?: string[]
   customer_item_number?: string // SKU for backend tracking
+  price?: number // Product price for budget control
   // Multiple items support (for kits with polo + cap/beanie, tile + cap/beanie, airtag + cap/beanie)
   has_multiple_items?: boolean
   polo_colors?: string[]

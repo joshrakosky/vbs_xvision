@@ -1,13 +1,13 @@
 /**
  * Helper functions for image path generation
- * Images are named: SYKEDT_{item#}_{color}.jpg
- * Example: SYKEDT_NKFQ4762_Black.jpg
+ * Images are named: VBS_{item#}_{color}.jpg
+ * Example: VBS_NKFQ4762_Black.jpg
  */
 
 /**
  * Normalize color name to match image filename format
  * Pattern: No spaces, proper capitalization (e.g., "Dark Grey Heather" -> "DarkGreyHeather")
- * Based on actual filenames: SYKEDT_NKFQ4762_DarkGreyHeather.jpg
+ * Based on actual filenames: VBS_NKFQ4762_DarkGreyHeather.jpg
  */
 export function normalizeColorForImage(color: string): string {
   // Handle specific known mappings
@@ -35,10 +35,10 @@ export function normalizeColorForImage(color: string): string {
 
 /**
  * Generate image path for a product color
- * @param customerItemNumber - The customer item number (e.g., "SYKEDT-AP-NKFQ4762")
+ * @param customerItemNumber - The customer item number (e.g., "CES-AP-NKFQ4762" or "VBS-AP-NKFQ4762")
  * @param color - The color name (e.g., "Anthracite Heather")
- * @param size - Optional size for YETI Kit (e.g., "8oz", "26oz", "35oz")
- * @returns Image path (e.g., "/images/SYKEDT_NKFQ4762_AnthraciteHeather.jpg" or "/images/SYKEDT-YETI-08-Black.jpg")
+ * @param size - Optional size for kits (e.g., "8oz", "26oz", "35oz")
+ * @returns Image path (e.g., "/images/VBS_NKFQ4762_AnthraciteHeather.jpg" or "/images/VBS-YETI-08-Black.jpg")
  */
 export function getProductImagePath(
   customerItemNumber: string | null | undefined, 
@@ -47,21 +47,30 @@ export function getProductImagePath(
 ): string | null {
   if (!customerItemNumber || !color) return null
   
-  // Special handling for YETI Kit - uses size-specific naming
-  if (customerItemNumber === 'SYKEDT-KIT-YETI-08' && size) {
+  // Special handling for kits with size-specific naming (if needed)
+  // Example: if customerItemNumber === 'CES-KIT-YETI-08' or 'VBS-KIT-YETI-08'
+  if ((customerItemNumber.includes('KIT-YETI') || customerItemNumber.includes('KIT')) && size) {
     // Convert size to number format: "8oz" -> "08", "26oz" -> "26", "35oz" -> "35"
     const sizeNumber = size.replace('oz', '').padStart(2, '0') // "8oz" -> "08", "26oz" -> "26"
     const normalizedColor = normalizeColorForImage(color)
-    return `/images/SYKEDT-YETI-${sizeNumber}-${normalizedColor}.jpg`
+    return `/images/VBS-YETI-${sizeNumber}-${normalizedColor}.jpg`
   }
   
-  // Extract the item number part (e.g., "NKFQ4762" from "SYKEDT-AP-NKFQ4762")
+  // Extract the item number part (e.g., "NKFQ4762" from "CES-AP-NKFQ4762" or "VBS-AP-NKFQ4762")
   let itemNumber = customerItemNumber
   
-  // If it contains dashes, extract everything after "SYKEDT-"
-  if (customerItemNumber.startsWith('SYKEDT-')) {
-    // Remove "SYKEDT-" prefix and keep the rest
-    itemNumber = customerItemNumber.replace('SYKEDT-', '')
+  // If it contains dashes, extract everything after "CES-" or "VBS-"
+  if (customerItemNumber.startsWith('CES-')) {
+    // Remove "CES-" prefix and keep the rest
+    itemNumber = customerItemNumber.replace('CES-', '')
+    // If there are more dashes, extract the last part
+    if (itemNumber.includes('-')) {
+      const parts = itemNumber.split('-')
+      itemNumber = parts[parts.length - 1] // Get last part (e.g., "NKFQ4762")
+    }
+  } else if (customerItemNumber.startsWith('VBS-')) {
+    // Remove "VBS-" prefix and keep the rest
+    itemNumber = customerItemNumber.replace('VBS-', '')
     // If there are more dashes, extract the last part
     if (itemNumber.includes('-')) {
       const parts = itemNumber.split('-')
@@ -72,8 +81,8 @@ export function getProductImagePath(
   // Normalize color for filename (no spaces, proper capitalization)
   const normalizedColor = normalizeColorForImage(color)
   
-  // Generate path: /images/SYKEDT_{item#}_{color}.jpg
-  return `/images/SYKEDT_${itemNumber}_${normalizedColor}.jpg`
+  // Generate path: /images/VBS_{item#}_{color}.jpg
+  return `/images/VBS_${itemNumber}_${normalizedColor}.jpg`
 }
 
 /**

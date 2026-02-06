@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
+import { FIXED_SHIPPING_ADDRESS } from '@/lib/shippingConfig'
 
-// Generate unique order number in format sykedt-001, sykedt-002, etc.
+// Generate unique order number in format CES-001, CES-002, etc.
 async function generateOrderNumber(): Promise<string> {
   // Get the highest existing order number
   const { data: orders, error } = await supabase
-    .from('syk_edt_orders')
+    .from('cestes_orders')
     .select('order_number')
     .order('created_at', { ascending: false })
     .limit(1)
@@ -13,26 +14,26 @@ async function generateOrderNumber(): Promise<string> {
   if (error) {
     console.error('Error fetching orders:', error)
     // Fallback: start from 1 if there's an error
-    return 'sykedt-001'
+    return 'CES-001'
   }
 
   if (!orders || orders.length === 0) {
     // First order
-    return 'sykedt-001'
+    return 'CES-001'
   }
 
-  // Extract number from existing order (e.g., "sykedt-001" -> 1)
+  // Extract number from existing order (e.g., "CES-001" -> 1)
   const lastOrderNumber = orders[0].order_number
-  const match = lastOrderNumber.match(/sykedt-(\d+)/i)
+  const match = lastOrderNumber.match(/CES-(\d+)/i)
   
   if (match) {
     const lastNumber = parseInt(match[1], 10)
     const nextNumber = lastNumber + 1
-    return `sykedt-${String(nextNumber).padStart(3, '0')}`
+    return `CES-${String(nextNumber).padStart(3, '0')}`
   }
 
   // If format doesn't match, start from 1
-  return 'sykedt-001'
+  return 'CES-001'
 }
 
 export async function POST(request: NextRequest) {
@@ -48,9 +49,12 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Handle cart (array of products) or single product
+    const cartItems = Array.isArray(product) ? product : [product]
+
     // Check for duplicate order by email (one order per email)
     const { data: existingOrder } = await supabase
-      .from('syk_edt_orders')
+      .from('cestes_orders')
       .select('id')
       .eq('email', email.toLowerCase())
       .single()
@@ -65,81 +69,84 @@ export async function POST(request: NextRequest) {
     // Generate order number
     const orderNumber = await generateOrderNumber()
 
-    // Create order
+    // Create order with fixed shipping address (user shipping info collected but not used)
     const { data: order, error: orderError } = await supabase
-      .from('syk_edt_orders')
+      .from('cestes_orders')
       .insert({
         email: email.toLowerCase(),
         order_number: orderNumber,
-        shipping_name: shipping.name,
-        shipping_address: shipping.address,
-        shipping_address2: shipping.address2 || null,
-        shipping_city: shipping.city,
-        shipping_state: shipping.state,
-        shipping_zip: shipping.zip,
-        shipping_country: shipping.country || 'USA'
+        shipping_name: FIXED_SHIPPING_ADDRESS.name,
+        shipping_address: FIXED_SHIPPING_ADDRESS.address,
+        shipping_address2: FIXED_SHIPPING_ADDRESS.address2 || null,
+        shipping_city: FIXED_SHIPPING_ADDRESS.city,
+        shipping_state: FIXED_SHIPPING_ADDRESS.state,
+        shipping_zip: FIXED_SHIPPING_ADDRESS.zip,
+        shipping_country: FIXED_SHIPPING_ADDRESS.country
       })
       .select()
       .single()
 
     if (orderError) throw orderError
 
-    // Get product details for order item
-    const { data: productData } = await supabase
-      .from('syk_edt_products')
-      .select('name, customer_item_number')
-      .eq('id', product.productId)
-      .single()
+    // Process all cart items
+    const orderItems: any[] = []
+    
+    for (const cartItem of cartItems) {
+      // Get product details
+      const { data: productData } = await supabase
+        .from('cestes_products')
+        .select('name, customer_item_number')
+        .eq('id', cartItem.productId)
+        .single()
 
-    // Handle YETI Kit specially - creates 3 items (one for each size) with individual colors
-    const isYetiKit = product.isYetiKit || productData?.name === 'YETI Kit'
-    
-    let orderItems: any[] = []
-    
-    if (isYetiKit && product.yeti8ozColor && product.yeti26ozColor && product.yeti35ozColor) {
-      // Create 3 order items for YETI Kit - one for each size with its selected color
-      const yetiItems = [
-        {
-          size: '8oz',
-          name: 'YETI Rambler 8oz Stackable Cup',
-          color: product.yeti8ozColor
-        },
-        {
-          size: '26oz',
-          name: 'YETI Rambler 26oz Straw Bottle',
-          color: product.yeti26ozColor
-        },
-        {
-          size: '35oz',
-          name: 'YETI Rambler 35oz Tumbler with Straw Lid',
-          color: product.yeti35ozColor
-        }
-      ]
+      // Handle YETI Kit specially - creates 3 items (one for each size) with individual colors
+      const isYetiKit = cartItem.isYetiKit || productData?.name === 'YETI Kit'
       
-      orderItems = yetiItems.map(item => ({
-        order_id: order.id,
-        product_id: product.productId,
-        product_name: item.name,
-        customer_item_number: productData?.customer_item_number || null,
-        color: item.color,
-        size: item.size
-      }))
-    } else {
-      // Regular single product
-      orderItems = [
-        {
+      if (isYetiKit && cartItem.yeti8ozColor && cartItem.yeti26ozColor && cartItem.yeti35ozColor) {
+        // Create 3 order items for YETI Kit
+        const yetiItems = [
+          {
+            size: '8oz',
+            name: 'YETI Rambler 8oz Stackable Cup',
+            color: cartItem.yeti8ozColor
+          },
+          {
+            size: '26oz',
+            name: 'YETI Rambler 26oz Straw Bottle',
+            color: cartItem.yeti26ozColor
+          },
+          {
+            size: '35oz',
+            name: 'YETI Rambler 35oz Tumbler with Straw Lid',
+            color: cartItem.yeti35ozColor
+          }
+        ]
+        
+        yetiItems.forEach(item => {
+          orderItems.push({
+            order_id: order.id,
+            product_id: cartItem.productId,
+            product_name: item.name,
+            customer_item_number: productData?.customer_item_number || null,
+            color: item.color,
+            size: item.size
+          })
+        })
+      } else {
+        // Regular product
+        orderItems.push({
           order_id: order.id,
-          product_id: product.productId,
-          product_name: productData?.name || 'Unknown Product',
+          product_id: cartItem.productId,
+          product_name: cartItem.productName || productData?.name || 'Unknown Product',
           customer_item_number: productData?.customer_item_number || null,
-          color: product.color || null,
-          size: product.size || null
-        }
-      ]
+          color: cartItem.color || null,
+          size: cartItem.size || null
+        })
+      }
     }
 
     const { error: itemsError } = await supabase
-      .from('syk_edt_order_items')
+      .from('cestes_order_items')
       .insert(orderItems)
 
     if (itemsError) throw itemsError

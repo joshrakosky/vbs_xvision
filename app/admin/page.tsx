@@ -14,7 +14,7 @@ export default function AdminPage() {
   const [error, setError] = useState('')
 
   // Simple password protection (you can enhance this later)
-  const ADMIN_PASSWORD = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || 'stryker2024'
+  const ADMIN_PASSWORD = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || 'vbspine2024'
 
   useEffect(() => {
     if (authenticated) {
@@ -38,7 +38,7 @@ export default function AdminPage() {
       
       // Fetch orders with their items
       const { data: ordersData, error: ordersError } = await supabase
-        .from('syk_edt_orders')
+        .from('cestes_orders')
         .select('*')
         .order('created_at', { ascending: false })
 
@@ -48,7 +48,7 @@ export default function AdminPage() {
       const ordersWithItems = await Promise.all(
         (ordersData || []).map(async (order) => {
           const { data: items, error: itemsError } = await supabase
-            .from('syk_edt_order_items')
+            .from('cestes_order_items')
             .select('*')
             .eq('order_id', order.id)
             .order('created_at')
@@ -73,7 +73,7 @@ export default function AdminPage() {
   const exportToExcel = async () => {
     // Fetch all products to get deco information
     const { data: productsData, error: productsError } = await supabase
-      .from('syk_edt_products')
+      .from('cestes_products')
       .select('id, deco')
 
     if (productsError) {
@@ -169,7 +169,7 @@ export default function AdminPage() {
     XLSX.utils.book_append_sheet(wb, wsSummary, 'Distribution Summary')
 
     // Generate filename with current date
-    const filename = `syk-edt-orders-${new Date().toISOString().split('T')[0]}.xlsx`
+    const filename = `cestes-orders-${new Date().toISOString().split('T')[0]}.xlsx`
 
     // Write file
     XLSX.writeFile(wb, filename)
@@ -194,7 +194,7 @@ export default function AdminPage() {
                   setPassword(e.target.value)
                   setError('')
                 }}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#663399] focus:border-transparent"
                 required
               />
               {error && (
@@ -203,7 +203,8 @@ export default function AdminPage() {
             </div>
             <button
               type="submit"
-              className="w-full bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+              className="w-full text-white py-2 px-4 rounded-md hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-[#663399] focus:ring-offset-2"
+              style={{ backgroundColor: '#663399' }}
             >
               Login
             </button>
@@ -220,7 +221,7 @@ export default function AdminPage() {
         <div className="bg-white rounded-lg shadow-lg p-8">
           <div className="flex justify-between items-center mb-6">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">SYK EDT Order Management</h1>
+              <h1 className="text-3xl font-bold text-gray-900">VB Spine Order Management</h1>
               <p className="text-gray-600 mt-1">Total Orders: {orders.length}</p>
             </div>
             <div className="flex gap-4">
