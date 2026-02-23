@@ -10,7 +10,9 @@ import { useLanguage } from '@/lib/languageContext'
 
 // Allowed email addresses (case-insensitive) - whitelist for VB Spine access
 const ALLOWED_EMAILS = [
-  'josh.rakosky@proforma.com'
+  'josh.rakosky@proforma.com',
+  'test@vbspineco.com',
+  'bryan.webb@proforma.com'
   // Add more whitelisted emails here as needed
 ]
 
