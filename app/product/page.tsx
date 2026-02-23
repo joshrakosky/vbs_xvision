@@ -136,8 +136,7 @@ export default function ProductPage() {
   const getThumbnailUrl = () => {
     if (!selectedProduct) return null
     
-    const productWithColors = selectedProduct as { logo_colors_available?: string; [key: string]: unknown }
-    const logoColors = productWithColors.logo_colors_available
+    const logoColors = selectedProduct.logo_colors_available
       ?.split(',')
       .map(s => s.trim())
       .filter(Boolean) ?? []
@@ -146,25 +145,25 @@ export default function ProductPage() {
     const effectiveLogoColor = selectedLogoColor || (logoColors.length > 0 ? defaultLogoColor : undefined)
     
     if (selectedColor) {
-      if (productWithColors.color_thumbnails && productWithColors.color_thumbnails[selectedColor]) {
-        return productWithColors.color_thumbnails[selectedColor]
+      if (selectedProduct.color_thumbnails && selectedProduct.color_thumbnails[selectedColor]) {
+        return selectedProduct.color_thumbnails[selectedColor]
       }
       
       const generatedPath = getProductImagePath(
-        productWithColors.customer_item_number,
+        selectedProduct.customer_item_number,
         selectedColor,
         effectiveLogoColor
       )
       if (generatedPath) return generatedPath
     }
     
-    if (productWithColors.thumbnail_url_black) return productWithColors.thumbnail_url_black
-    if (productWithColors.thumbnail_url_white) return productWithColors.thumbnail_url_white
+    if (selectedProduct.thumbnail_url_black) return selectedProduct.thumbnail_url_black
+    if (selectedProduct.thumbnail_url_white) return selectedProduct.thumbnail_url_white
     
     if (selectedProduct.available_colors && selectedProduct.available_colors.length > 0) {
       const firstColor = selectedProduct.available_colors[0]
       const generatedPath = getProductImagePath(
-        productWithColors.customer_item_number,
+        selectedProduct.customer_item_number,
         firstColor,
         effectiveLogoColor
       )
