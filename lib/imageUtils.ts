@@ -1,7 +1,8 @@
 /**
  * Helper functions for image path generation
- * Images are named: VBS_{item#}_{color}.jpg
- * Example: VBS_NKFQ4762_Black.jpg
+ * Images are named: {sku}_{color}_{logoColor}.jpg
+ * Each product color + logo color combo has its own thumbnail.
+ * Example: CES-VEST-MEN_BlackDolphin_Purple.jpg, CES-CREW-WOMEN_Graphite_White.jpg
  */
 
 /**
@@ -13,11 +14,14 @@ export function normalizeColorForImage(color: string): string {
   // Handle specific known mappings
   const colorMap: Record<string, string> = {
     'Anthracite Heather': 'AnthraciteHeather',
-    'Dark Grey Heather': 'DarkGreyHeather', // No spaces, proper capitalization
+    'Dark Grey Heather': 'DarkGreyHeather',
     'Dark Grey': 'DarkGrey',
     'Graphite Heather': 'GraphiteHeather',
     'TNF Black': 'TNFBlack',
     'Cape Taupe': 'CapeTaupe',
+    'Carbon Heather': 'CarbonHeather',
+    'Charcoal Heather': 'CharcoalHeather',
+    'Black-Dolphin': 'BlackDolphin', // Single color (vest)
   }
   
   // Check if we have a direct mapping
@@ -34,74 +38,50 @@ export function normalizeColorForImage(color: string): string {
 }
 
 /**
- * Generate image path for a product color
- * @param customerItemNumber - The customer item number (e.g., "CES-AP-NKFQ4762" or "VBS-AP-NKFQ4762")
+ * Generate image path for a product color (+ logo color when available)
+ * Format: {sku}_{color}_{logoColor}.jpg - each logo variant has its own image
+ * Fallback: {sku}_{color}.jpg when logo color not provided (backward compat)
+ * @param customerItemNumber - The SKU / customer item number (e.g., "CES-VEST-MEN", "CES-CREW-WOMEN")
  * @param color - The color name (e.g., "Anthracite Heather")
- * @param size - Optional size for kits (e.g., "8oz", "26oz", "35oz")
- * @returns Image path (e.g., "/images/VBS_NKFQ4762_AnthraciteHeather.jpg" or "/images/VBS-YETI-08-Black.jpg")
+ * @param logoColor - Optional logo color (e.g., "Purple", "White") - required for 3-part naming
+ * @returns Image path (e.g., "/images/CES-VEST-MEN_Black_Purple.jpg")
  */
 export function getProductImagePath(
   customerItemNumber: string | null | undefined, 
   color: string,
-  size?: string
+  logoColor?: string
 ): string | null {
   if (!customerItemNumber || !color) return null
   
-  // Special handling for kits with size-specific naming (if needed)
-  // Example: if customerItemNumber === 'CES-KIT-YETI-08' or 'VBS-KIT-YETI-08'
-  if ((customerItemNumber.includes('KIT-YETI') || customerItemNumber.includes('KIT')) && size) {
-    // Convert size to number format: "8oz" -> "08", "26oz" -> "26", "35oz" -> "35"
-    const sizeNumber = size.replace('oz', '').padStart(2, '0') // "8oz" -> "08", "26oz" -> "26"
-    const normalizedColor = normalizeColorForImage(color)
-    return `/images/VBS-YETI-${sizeNumber}-${normalizedColor}.jpg`
-  }
-  
-  // Extract the item number part (e.g., "NKFQ4762" from "CES-AP-NKFQ4762" or "VBS-AP-NKFQ4762")
-  let itemNumber = customerItemNumber
-  
-  // If it contains dashes, extract everything after "CES-" or "VBS-"
-  if (customerItemNumber.startsWith('CES-')) {
-    // Remove "CES-" prefix and keep the rest
-    itemNumber = customerItemNumber.replace('CES-', '')
-    // If there are more dashes, extract the last part
-    if (itemNumber.includes('-')) {
-      const parts = itemNumber.split('-')
-      itemNumber = parts[parts.length - 1] // Get last part (e.g., "NKFQ4762")
-    }
-  } else if (customerItemNumber.startsWith('VBS-')) {
-    // Remove "VBS-" prefix and keep the rest
-    itemNumber = customerItemNumber.replace('VBS-', '')
-    // If there are more dashes, extract the last part
-    if (itemNumber.includes('-')) {
-      const parts = itemNumber.split('-')
-      itemNumber = parts[parts.length - 1] // Get last part (e.g., "NKFQ4762")
-    }
-  }
-  
-  // Normalize color for filename (no spaces, proper capitalization)
   const normalizedColor = normalizeColorForImage(color)
-  
-  // Generate path: /images/VBS_{item#}_{color}.jpg
-  return `/images/VBS_${itemNumber}_${normalizedColor}.jpg`
+  // 3-part format when logo color known; otherwise 2-part for fallback
+  if (logoColor) {
+    const normalizedLogo = normalizeColorForImage(logoColor)
+    return `/images/${customerItemNumber}_${normalizedColor}_${normalizedLogo}.jpg`
+  }
+  return `/images/${customerItemNumber}_${normalizedColor}.jpg`
 }
 
 /**
- * Generate image paths for all colors of a product
- * Returns a map of color name -> image path
+ * Generate image paths for all color + logoColor combos of a product
+ * @param logoColors - Defaults to ["Purple", "White"] if not provided
  */
 export function generateColorThumbnails(
   customerItemNumber: string | null | undefined,
-  colors: string[] | null | undefined
+  colors: string[] | null | undefined,
+  logoColors?: string[]
 ): Record<string, string> | null {
   if (!customerItemNumber || !colors || colors.length === 0) return null
   
+  const logos = logoColors && logoColors.length > 0 ? logoColors : ['Purple', 'White']
   const thumbnails: Record<string, string> = {}
   
   colors.forEach(color => {
-    const path = getProductImagePath(customerItemNumber, color)
-    if (path) {
-      thumbnails[color] = path
-    }
+    logos.forEach(logoColor => {
+      const key = `${color}_${logoColor}`
+      const path = getProductImagePath(customerItemNumber, color, logoColor)
+      if (path) thumbnails[key] = path
+    })
   })
   
   return thumbnails

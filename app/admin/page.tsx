@@ -71,90 +71,109 @@ export default function AdminPage() {
   }
 
   const exportToExcel = async () => {
-    // Fetch all products to get deco information
+    // Fetch all products with fulfillment columns for export
     const { data: productsData, error: productsError } = await supabase
       .from('cestes_products')
-      .select('id, deco')
+      .select('id, deco, vendor_ref, vendor_item_num, unit_cost, unit_sell, logo, logo_colors_available, logo_location, notes')
 
     if (productsError) {
       alert('Failed to load product information. Please try again.')
       return
     }
 
-    // Create a map of product_id -> deco for quick lookup
-    const productDecoMap = new Map<string, string>()
+    const productMap = new Map<string, Record<string, unknown>>()
     productsData?.forEach(product => {
-      if (product.deco) {
-        productDecoMap.set(product.id, product.deco)
-      }
+      productMap.set(product.id, product as Record<string, unknown>)
     })
 
     // Sheet 1: Detailed Orders (one row per item)
     const detailedData = orders.flatMap(order => {
-      return order.items.map((item) => ({
-        'Order Number': order.order_number,
-        'Email': order.email,
-        'Product Name': item.product_name,
-        'Customer Item #': item.customer_item_number || '',
-        'Color': item.color || '',
-        'Size': item.size || '',
-        'Shipping Name': order.shipping_name,
-        'Shipping Address': order.shipping_address,
-        'Shipping City': order.shipping_city,
-        'Shipping State': order.shipping_state,
-        'Shipping ZIP': order.shipping_zip,
-        'Shipping Country': order.shipping_country,
-        'Order Date': new Date(order.created_at).toLocaleDateString()
-      }))
-    })
-
-    // Sheet 2: Distribution Summary (grouped by product/color/size)
-    const summaryMap = new Map<string, { quantity: number; deco: string }>()
-    
-    orders.forEach(order => {
-      order.items.forEach(item => {
-        // Create a unique key for product/color/size combination
-        const key = [
-          item.product_name,
-          item.customer_item_number || '',
-          item.color || 'N/A',
-          item.size || 'N/A'
-        ].join('|')
-        
-        // Get deco from product
-        let deco = item.product_id ? (productDecoMap.get(item.product_id) || '') : ''
-        
-        // Add any product-specific deco logic here if needed
-        
-        const existing = summaryMap.get(key)
-        if (existing) {
-          summaryMap.set(key, { quantity: existing.quantity + 1, deco: existing.deco })
-        } else {
-          summaryMap.set(key, { quantity: 1, deco })
+      return order.items.map((item) => {
+        const product = item.product_id ? productMap.get(item.product_id) : undefined
+        const itemWithLogo = item as { logo_color?: string }
+        return {
+          'Order Number': order.order_number,
+          'Email': order.email,
+          'Product Name': item.product_name,
+          'Customer Item #': item.customer_item_number || '',
+          'Vendor Ref': product?.vendor_ref ?? '',
+          'Vendor Item #': product?.vendor_item_num ?? '',
+          'Unit Cost': product?.unit_cost ?? '',
+          'Unit Sell': product?.unit_sell ?? '',
+          'Color': item.color || '',
+          'Size': item.size || '',
+          'Logo': product?.logo ?? '',
+          'Logo Colors': product?.logo_colors_available ?? '',
+          'Logo Color': itemWithLogo.logo_color ?? '',
+          'Logo Location': product?.logo_location ?? '',
+          'Notes': product?.notes ?? '',
+          'Shipping Name': order.shipping_name,
+          'Shipping Address': order.shipping_address,
+          'Shipping City': order.shipping_city,
+          'Shipping State': order.shipping_state,
+          'Shipping ZIP': order.shipping_zip,
+          'Shipping Country': order.shipping_country,
+          'Order Date': new Date(order.created_at).toLocaleDateString()
         }
       })
     })
 
-    // Convert map to array for Excel
+    // Sheet 2: Distribution Summary (grouped by product/color/size/logo color)
+    type SummaryEntry = { quantity: number; product: Record<string, unknown> | undefined }
+    const summaryMap = new Map<string, SummaryEntry>()
+    
+    orders.forEach(order => {
+      order.items.forEach(item => {
+        const itemWithLogo = item as { logo_color?: string }
+        const key = [
+          item.product_name,
+          item.customer_item_number || '',
+          item.color || 'N/A',
+          item.size || 'N/A',
+          itemWithLogo.logo_color || 'N/A'
+        ].join('|')
+        
+        const product = item.product_id ? productMap.get(item.product_id) : undefined
+        const existing = summaryMap.get(key)
+        if (existing) {
+          summaryMap.set(key, { quantity: existing.quantity + 1, product: existing.product })
+        } else {
+          summaryMap.set(key, { quantity: 1, product })
+        }
+      })
+    })
+
     const summaryData = Array.from(summaryMap.entries()).map(([key, data]) => {
-      const [productName, customerItem, color, size] = key.split('|')
+      const [productName, customerItem, color, size, logoColor] = key.split('|')
+      const product = data.product
       return {
         'Product Name': productName,
         'Customer Item #': customerItem,
+        'Vendor Ref': product?.vendor_ref ?? '',
+        'Vendor Item #': product?.vendor_item_num ?? '',
+        'Unit Cost': product?.unit_cost ?? '',
+        'Unit Sell': product?.unit_sell ?? '',
         'Color': color,
         'Size': size,
-        'Deco': data.deco || '',
+        'Logo': product?.logo ?? '',
+        'Logo Colors': product?.logo_colors_available ?? '',
+        'Logo Color': logoColor !== 'N/A' ? logoColor : '',
+        'Logo Location': product?.logo_location ?? '',
+        'Deco': product?.deco ?? '',
+        'Notes': product?.notes ?? '',
         'Quantity': data.quantity
       }
     }).sort((a, b) => {
-      // Sort by product name, then color, then size
       if (a['Product Name'] !== b['Product Name']) {
-        return a['Product Name'].localeCompare(b['Product Name'])
+        return (a['Product Name'] as string).localeCompare(b['Product Name'] as string)
       }
       if (a['Color'] !== b['Color']) {
-        return a['Color'].localeCompare(b['Color'])
+        return (a['Color'] as string).localeCompare(b['Color'] as string)
       }
-      return a['Size'].localeCompare(b['Size'])
+      if (a['Size'] !== b['Size']) {
+        return (a['Size'] as string).localeCompare(b['Size'] as string)
+      }
+      return (a['Logo Color'] as string).localeCompare(b['Logo Color'] as string)
     })
 
     // Create workbook with two sheets
@@ -289,6 +308,7 @@ export default function AdminPage() {
                               {item.customer_item_number && ` [${item.customer_item_number}]`}
                               {item.color && ` - ${item.color}`}
                               {item.size && ` (${item.size})`}
+                              {(item as { logo_color?: string }).logo_color && ` Logo: ${(item as { logo_color?: string }).logo_color}`}
                             </div>
                           ))}
                         </div>

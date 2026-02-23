@@ -16,6 +16,15 @@ export interface Product {
   available_sizes?: string[]
   customer_item_number?: string // SKU for backend tracking
   price?: number // Product price for budget control
+  // New columns from migration (export/fulfillment)
+  vendor_ref?: string
+  vendor_item_num?: string
+  unit_cost?: number
+  unit_sell?: number
+  logo?: string
+  logo_colors_available?: string // e.g. "Purple, White" - parsed at runtime
+  logo_location?: string
+  notes?: string
   // Multiple items support (for kits with polo + cap/beanie, tile + cap/beanie, airtag + cap/beanie)
   has_multiple_items?: boolean
   polo_colors?: string[]
@@ -50,6 +59,7 @@ export interface OrderItem {
   customer_item_number?: string // SKU for backend tracking
   color?: string
   size?: string
+  logo_color?: string // Selected logo color for order fulfillment
   created_at: string
 }
 

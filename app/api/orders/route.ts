@@ -133,15 +133,19 @@ export async function POST(request: NextRequest) {
           })
         })
       } else {
-        // Regular product
-        orderItems.push({
-          order_id: order.id,
-          product_id: cartItem.productId,
-          product_name: cartItem.productName || productData?.name || 'Unknown Product',
-          customer_item_number: productData?.customer_item_number || null,
-          color: cartItem.color || null,
-          size: cartItem.size || null
-        })
+        // Regular product - create one order_item per quantity
+        const qty = cartItem.quantity ?? 1
+        for (let i = 0; i < qty; i++) {
+          orderItems.push({
+            order_id: order.id,
+            product_id: cartItem.productId,
+            product_name: cartItem.productName || productData?.name || 'Unknown Product',
+            customer_item_number: productData?.customer_item_number || null,
+            color: cartItem.color || null,
+            size: cartItem.size || null,
+            logo_color: cartItem.logo_color || null
+          })
+        }
       }
     }
 

@@ -9,10 +9,7 @@ interface CartItem {
   price: number
   color?: string
   size?: string
-  isYetiKit?: boolean
-  yeti8ozColor?: string
-  yeti26ozColor?: string
-  yeti35ozColor?: string
+  logo_color?: string
 }
 
 const MAX_BUDGET = 200
@@ -69,9 +66,9 @@ export default function CartIcon() {
     window.dispatchEvent(new Event('cartUpdated'))
   }
 
-  const currentTotal = cart.reduce((sum, item) => sum + item.price, 0)
+  const currentTotal = cart.reduce((sum, item) => sum + (item.price * (item.quantity ?? 1)), 0)
   const remainingBudget = MAX_BUDGET - currentTotal
-  const itemCount = cart.length
+  const itemCount = cart.reduce((sum, item) => sum + (item.quantity ?? 1), 0)
 
   // Only show cart icon if there are items
   if (itemCount === 0) {
@@ -155,22 +152,19 @@ export default function CartIcon() {
                     <div className="flex justify-between items-start mb-2">
                       <div className="flex-1">
                         <p className="font-medium text-gray-900">{item.productName}</p>
-                        {item.isYetiKit ? (
-                          <div className="mt-1 text-xs text-gray-600 space-y-1">
-                            <p>• 8oz Cup: {item.yeti8ozColor}</p>
-                            <p>• 26oz Bottle: {item.yeti26ozColor}</p>
-                            <p>• 35oz Tumbler: {item.yeti35ozColor}</p>
-                          </div>
-                        ) : (
-                          <div className="mt-1 text-xs text-gray-600">
-                            {item.color && <span>Color: {item.color}</span>}
-                            {item.color && item.size && <span> • </span>}
-                            {item.size && <span>Size: {item.size}</span>}
-                          </div>
-                        )}
+                        <div className="mt-1 text-xs text-gray-600">
+                          {(item.quantity ?? 1) > 1 && <span className="font-medium">Qty: {item.quantity} • </span>}
+                          {[item.color && `Color: ${item.color}`, item.size && `Size: ${item.size}`, item.logo_color && `Logo: ${item.logo_color}`]
+                            .filter(Boolean)
+                            .join(' • ')}
+                        </div>
                       </div>
                       <div className="flex items-center gap-3 ml-4">
-                        <span className="font-bold text-gray-900">${item.price.toFixed(2)}</span>
+                        <span className="font-bold text-gray-900">
+                          {(item.quantity ?? 1) > 1
+                            ? `${item.quantity} × $${item.price.toFixed(2)} = $${(item.price * (item.quantity ?? 1)).toFixed(2)}`
+                            : `$${item.price.toFixed(2)}`}
+                        </span>
                         <button
                           onClick={() => handleRemove(index)}
                           className="text-red-600 hover:text-red-800 text-sm font-medium"

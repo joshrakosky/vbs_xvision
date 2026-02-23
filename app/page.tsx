@@ -5,6 +5,7 @@ import { useState } from 'react'
 import VBSLogo from '@/components/VBSLogo'
 import AdminExportButton from '@/components/AdminExportButton'
 import HelpIcon from '@/components/HelpIcon'
+import AnimatedBackground from '@/components/AnimatedBackground'
 import { useLanguage } from '@/lib/languageContext'
 
 // Allowed email addresses (case-insensitive) - whitelist for VB Spine access
@@ -59,7 +60,8 @@ export default function LandingPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-indigo-50 px-4 relative">
+    <div className="min-h-screen flex items-center justify-center px-4 relative">
+      <AnimatedBackground />
       <AdminExportButton />
       <HelpIcon />
       <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8">

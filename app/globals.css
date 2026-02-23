@@ -27,3 +27,21 @@ input, select, textarea {
 input::placeholder {
   color: #9ca3af !important;
 }
+
+/* Landing page background animations - subtle floating orbs */
+@keyframes float-slow {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(30px, -20px) scale(1.05); }
+  66% { transform: translate(-20px, 20px) scale(0.95); }
+}
+
+@keyframes float-slow-reverse {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(-25px, 15px) scale(0.95); }
+  66% { transform: translate(20px, -25px) scale(1.05); }
+}
+
+@keyframes pulse-soft {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.6; }
+}

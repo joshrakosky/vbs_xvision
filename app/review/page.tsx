@@ -13,10 +13,7 @@ interface CartItem {
   price: number
   color?: string
   size?: string
-  isYetiKit?: boolean
-  yeti8ozColor?: string
-  yeti26ozColor?: string
-  yeti35ozColor?: string
+  logo_color?: string
 }
 
 export default function ReviewPage() {
@@ -93,7 +90,7 @@ export default function ReviewPage() {
     }
   }
 
-  const total = cart.reduce((sum, item) => sum + item.price, 0)
+  const total = cart.reduce((sum, item) => sum + (item.price * (item.quantity ?? 1)), 0)
 
   if (loading) {
     return (
@@ -125,33 +122,27 @@ export default function ReviewPage() {
 
           {/* Products Section */}
           <div className="mb-6 pb-6 border-b">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">{t('selectedProducts')} ({cart.length})</h2>
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">
+              {t('selectedProducts')} ({cart.reduce((n, i) => n + (i.quantity ?? 1), 0)} items)
+            </h2>
             <div className="space-y-3">
               {cart.map((item, index) => (
                 <div key={index} className="bg-gray-50 rounded-lg p-4">
-                  {item.isYetiKit ? (
-                    <div className="space-y-2">
-                      <p className="font-medium text-gray-900">{item.productName}</p>
-                      <div className="mt-2 pt-2 border-t border-gray-200">
-                        <p className="text-xs font-medium text-gray-600 mb-2">Kit Items:</p>
-                        <ul className="text-sm text-gray-600 space-y-1">
-                          <li>• YETI Rambler 8oz Stackable Cup - {item.yeti8ozColor}</li>
-                          <li>• YETI Rambler 26oz Straw Bottle - {item.yeti26ozColor}</li>
-                          <li>• YETI Rambler 35oz Tumbler with Straw Lid - {item.yeti35ozColor}</li>
-                        </ul>
-                      </div>
-                      <p className="text-sm font-medium text-gray-900 mt-2">${item.price.toFixed(2)}</p>
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <p className="font-medium text-gray-900">
+                        {item.productName}
+                        {(item.quantity ?? 1) > 1 && <span className="text-gray-600 font-normal"> × {item.quantity}</span>}
+                      </p>
+                      {item.color && <p className="text-sm text-gray-600">Color: {item.color}</p>}
+                      {item.size && <p className="text-sm text-gray-600">Size: {item.size}</p>}
+                      {item.logo_color && <p className="text-sm text-gray-600">Logo Color: {item.logo_color}</p>}
                     </div>
-                  ) : (
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <p className="font-medium text-gray-900">{item.productName}</p>
-                        {item.color && <p className="text-sm text-gray-600">Color: {item.color}</p>}
-                        {item.size && <p className="text-sm text-gray-600">Size: {item.size}</p>}
-                      </div>
-                      <p className="text-sm font-medium text-gray-900">${item.price.toFixed(2)}</p>
-                    </div>
-                  )}
+                    <p className="text-sm font-medium text-gray-900">
+                      ${((item.price ?? 0) * (item.quantity ?? 1)).toFixed(2)}
+                      {(item.quantity ?? 1) > 1 && ` (${item.quantity} × $${(item.price ?? 0).toFixed(2)})`}
+                    </p>
+                  </div>
                 </div>
               ))}
             </div>

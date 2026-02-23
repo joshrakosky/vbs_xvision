@@ -9,6 +9,7 @@ import AdminExportButton from '@/components/AdminExportButton'
 import HelpIcon from '@/components/HelpIcon'
 import CartIcon from '@/components/CartIcon'
 import { getProductImagePath } from '@/lib/imageUtils'
+import { parseSizeOptions } from '@/lib/sizeUtils'
 import { useLanguage } from '@/lib/languageContext'
 
 const MAX_BUDGET = 200
@@ -19,37 +20,31 @@ interface CartItem {
   price: number
   color?: string
   size?: string
-  isYetiKit?: boolean
-  yeti8ozColor?: string
-  yeti26ozColor?: string
-  yeti35ozColor?: string
+  logo_color?: string
 }
 
 export default function ProductPage() {
   const router = useRouter()
-  const { t } = useLanguage()
+  const { t, language } = useLanguage()
   const [products, setProducts] = useState<Product[]>([])
   const [selectedProductId, setSelectedProductId] = useState<string>('')
   const [selectedColor, setSelectedColor] = useState<string>('')
   const [selectedSize, setSelectedSize] = useState<string>('')
+  const [selectedLogoColor, setSelectedLogoColor] = useState<string>('')
+  const [selectedQuantity, setSelectedQuantity] = useState<number>(1)
   const [loading, setLoading] = useState(true)
+  const [sizingChartOpen, setSizingChartOpen] = useState(false)
   const [error, setError] = useState('')
   const [cart, setCart] = useState<CartItem[]>([])
   const cartRef = useRef<CartItem[]>([])
   const isInitialLoad = useRef(true)
   const [showAbandonConfirm, setShowAbandonConfirm] = useState(false)
-  
-  // YETI Kit specific state
-  const [activeYetiSize, setActiveYetiSize] = useState<string>('8oz')
-  const [yeti8ozColor, setYeti8ozColor] = useState<string>('')
-  const [yeti26ozColor, setYeti26ozColor] = useState<string>('')
-  const [yeti35ozColor, setYeti35ozColor] = useState<string>('')
+  const [showBudgetReminder, setShowBudgetReminder] = useState(false)
 
   const selectedProduct = products.find(p => p.id === selectedProductId)
-  const isYetiKit = selectedProduct?.name === 'YETI Kit'
   
-  // Calculate totals
-  const currentTotal = cart.reduce((sum, item) => sum + item.price, 0)
+  // Calculate totals (price * quantity per item)
+  const currentTotal = cart.reduce((sum, item) => sum + (item.price * (item.quantity ?? 1)), 0)
   const remainingBudget = MAX_BUDGET - currentTotal
   const canAddMore = remainingBudget > 0
 
@@ -60,9 +55,10 @@ export default function ProductPage() {
       try {
         const parsedCart = JSON.parse(savedCart)
         if (Array.isArray(parsedCart) && parsedCart.length > 0) {
-          // Valid cart with items - load it
-          setCart(parsedCart)
-          cartRef.current = parsedCart
+          // Normalize: ensure each item has quantity (backward compat)
+          const normalized = parsedCart.map((item: CartItem) => ({ ...item, quantity: item.quantity ?? 1 }))
+          setCart(normalized)
+          cartRef.current = normalized
         } else {
           // Empty cart array - still valid, just empty
           setCart([])
@@ -134,44 +130,30 @@ export default function ProductPage() {
     return () => window.removeEventListener('cartUpdated', handleCartUpdate)
   }, []) // Empty deps - use ref to access current cart value
 
-  // Get the appropriate thumbnail based on selected color
+  // Get the appropriate thumbnail based on selected color + logo color
+  // Format: sku_color_logoColor.jpg - each logo color combo has its own image
   const getThumbnailUrl = () => {
     if (!selectedProduct) return null
     
-    const productWithColors = selectedProduct as any
-    
-    if (isYetiKit) {
-      const activeColor = activeYetiSize === '8oz' ? yeti8ozColor : 
-                         activeYetiSize === '26oz' ? yeti26ozColor : 
-                         yeti35ozColor
-      
-      if (activeColor) {
-        const generatedPath = getProductImagePath(
-          productWithColors.customer_item_number, 
-          activeColor,
-          activeYetiSize
-        )
-        if (generatedPath) return generatedPath
-      }
-      
-      if (selectedProduct.available_colors && selectedProduct.available_colors.length > 0) {
-        const firstColor = selectedProduct.available_colors[0]
-        return getProductImagePath(
-          productWithColors.customer_item_number,
-          firstColor,
-          '8oz'
-        )
-      }
-      
-      return null
-    }
+    const productWithColors = selectedProduct as { logo_colors_available?: string; [key: string]: unknown }
+    const logoColors = productWithColors.logo_colors_available
+      ?.split(',')
+      .map(s => s.trim())
+      .filter(Boolean) ?? []
+    // Default to White logo for thumbnails when none selected (user prefers white logo images)
+    const defaultLogoColor = logoColors.find(c => c.toLowerCase() === 'white') || logoColors[0]
+    const effectiveLogoColor = selectedLogoColor || (logoColors.length > 0 ? defaultLogoColor : undefined)
     
     if (selectedColor) {
       if (productWithColors.color_thumbnails && productWithColors.color_thumbnails[selectedColor]) {
         return productWithColors.color_thumbnails[selectedColor]
       }
       
-      const generatedPath = getProductImagePath(productWithColors.customer_item_number, selectedColor)
+      const generatedPath = getProductImagePath(
+        productWithColors.customer_item_number,
+        selectedColor,
+        effectiveLogoColor
+      )
       if (generatedPath) return generatedPath
     }
     
@@ -180,7 +162,11 @@ export default function ProductPage() {
     
     if (selectedProduct.available_colors && selectedProduct.available_colors.length > 0) {
       const firstColor = selectedProduct.available_colors[0]
-      const generatedPath = getProductImagePath(productWithColors.customer_item_number, firstColor)
+      const generatedPath = getProductImagePath(
+        productWithColors.customer_item_number,
+        firstColor,
+        effectiveLogoColor
+      )
       if (generatedPath) return generatedPath
     }
     
@@ -220,40 +206,15 @@ export default function ProductPage() {
     }
 
     const productPrice = selectedProduct.price || 0
+    const qty = Math.max(1, Math.min(selectedQuantity || 1, Math.floor(remainingBudget / productPrice) || 1))
 
     // Check budget
-    if (currentTotal + productPrice > MAX_BUDGET) {
+    if (currentTotal + productPrice * qty > MAX_BUDGET) {
       setError(t('budgetExceeded'))
       return
     }
 
-    // Special validation for YETI Kit
-    if (isYetiKit) {
-      if (!yeti8ozColor || !yeti26ozColor || !yeti35ozColor) {
-        setError('Please select a color for each size')
-        return
-      }
-      
-      const newItem: CartItem = {
-        productId: selectedProductId,
-        productName: selectedProduct.name,
-        price: productPrice,
-        isYetiKit: true,
-        yeti8ozColor,
-        yeti26ozColor,
-        yeti35ozColor
-      }
-      
-      setCart([...cart, newItem])
-      
-      // Reset form
-      setSelectedProductId('')
-      setYeti8ozColor('')
-      setYeti26ozColor('')
-      setYeti35ozColor('')
-      setActiveYetiSize('8oz')
-    } else {
-      // Regular product validation
+    // Product validation
       if (selectedProduct.requires_color && !selectedColor) {
         setError(t('pleaseSelectColor'))
         return
@@ -264,34 +225,68 @@ export default function ProductPage() {
         return
       }
 
+      // Logo color validation - required when product has logo options
+      const productWithLogo = selectedProduct as { logo_colors_available?: string }
+      const logoColors = productWithLogo.logo_colors_available
+        ?.split(',')
+        .map(s => s.trim())
+        .filter(Boolean) ?? []
+      if (logoColors.length > 0 && !selectedLogoColor) {
+        setError(t('pleaseSelectLogoColor'))
+        return
+      }
+
+      const existingIdx = cart.findIndex(item => 
+        item.productId === selectedProductId &&
+        item.color === (selectedColor || undefined) && item.size === (selectedSize || undefined) &&
+        item.logo_color === (selectedLogoColor || undefined)
+      )
       const newItem: CartItem = {
         productId: selectedProductId,
         productName: selectedProduct.name,
         price: productPrice,
+        quantity: qty,
         color: selectedColor || undefined,
-        size: selectedSize || undefined
+        size: selectedSize || undefined,
+        logo_color: selectedLogoColor || undefined
       }
       
-      setCart([...cart, newItem])
+      if (existingIdx >= 0) {
+        const updated = [...cart]
+        updated[existingIdx] = { ...updated[existingIdx], quantity: (updated[existingIdx].quantity ?? 1) + qty }
+        setCart(updated)
+      } else {
+        setCart([...cart, newItem])
+      }
       
       // Reset form
       setSelectedProductId('')
       setSelectedColor('')
       setSelectedSize('')
-    }
+      setSelectedLogoColor('')
+      setSelectedQuantity(1)
     
     setError('')
   }
 
+  const proceedToShipping = () => {
+    sessionStorage.setItem('product', JSON.stringify(cart))
+    router.push('/shipping')
+  }
+
   const handleContinue = () => {
     if (cart.length === 0) {
-      setError('Please add at least one product to your cart')
+      setError(t('pleaseAddProduct'))
       return
     }
 
-    // Store cart as product selection (convert to format expected by shipping page)
-    sessionStorage.setItem('product', JSON.stringify(cart))
-    router.push('/shipping')
+    // If budget isn't maxed, show reminder to encourage adding more
+    if (remainingBudget > 0) {
+      setShowBudgetReminder(true)
+      return
+    }
+
+    proceedToShipping()
   }
 
   if (loading) {
@@ -340,68 +335,106 @@ export default function ProductPage() {
           )}
 
 
-          {/* Product Selection */}
+          {/* Product Selection - dropdown shortened with sizing chart button to the right */}
           <div className="mb-6">
             <label htmlFor="product-select" className="block text-sm font-medium text-gray-700 mb-2">
               {t('selectProductLabel')}
             </label>
-            <select
-              id="product-select"
-              value={selectedProductId}
-              onChange={(e) => {
+            <div className="flex gap-2 items-stretch">
+              <select
+                id="product-select"
+                value={selectedProductId}
+                onChange={(e) => {
                 const productId = e.target.value
                 setSelectedProductId(productId)
                 setSelectedSize('')
                 setSelectedColor('')
+                setSelectedLogoColor('')
                 setError('')
-                
-                setActiveYetiSize('8oz')
-                setYeti8ozColor('')
-                setYeti26ozColor('')
-                setYeti35ozColor('')
+                setSelectedQuantity(1)
                 
                 const product = products.find(p => p.id === productId)
-                
-                if (product?.name !== 'YETI Kit') {
+                if (product) {
                   if (product?.requires_color && product.available_colors && product.available_colors.length > 0) {
                     setSelectedColor(product.available_colors[0])
                   } else if (product?.requires_color && product.available_colors?.includes('Black')) {
                     setSelectedColor('Black')
                   }
-                  
-                  if (product?.requires_size && product.available_sizes && product.available_sizes.length === 1) {
-                    setSelectedSize(product.available_sizes[0])
+                  const parsedSizes = parseSizeOptions(product?.available_sizes)
+                  if (product?.requires_size && parsedSizes.length === 1) {
+                    setSelectedSize(parsedSizes[0])
+                  }
+                  const productWithLogo = product as { logo_colors_available?: string } | undefined
+                  const logoColors = productWithLogo?.logo_colors_available
+                    ?.split(',')
+                    .map(s => s.trim())
+                    .filter(Boolean) ?? []
+                  if (logoColors.length === 1) {
+                    setSelectedLogoColor(logoColors[0])
                   }
                 }
               }}
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#663399] focus:border-transparent text-black bg-white"
-              disabled={!canAddMore}
-            >
-              <option value="">{t('chooseProductPlaceholder')}</option>
-              {products.map(product => {
-                const productPrice = product.price || 0
-                const wouldExceedBudget = currentTotal + productPrice > MAX_BUDGET
-                return (
-                  <option 
-                    key={product.id} 
-                    value={product.id}
-                    disabled={wouldExceedBudget}
-                    style={wouldExceedBudget ? { 
-                      color: '#9ca3af', 
-                      backgroundColor: '#f3f4f6',
-                      fontStyle: 'italic'
-                    } : {}}
-                  >
-                    {product.name} - ${productPrice.toFixed(2)}
-                    {wouldExceedBudget && ` (Exceeds budget)`}
-                  </option>
-                )
-              })}
-            </select>
+                className="flex-1 min-w-0 max-w-md px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#663399] focus:border-transparent text-black bg-white"
+                disabled={!canAddMore}
+              >
+                <option value="">{t('chooseProductPlaceholder')}</option>
+                {products.map(product => {
+                  const productPrice = product.price || 0
+                  const wouldExceedBudget = currentTotal + productPrice > MAX_BUDGET
+                  return (
+                    <option 
+                      key={product.id} 
+                      value={product.id}
+                      disabled={wouldExceedBudget}
+                      style={wouldExceedBudget ? { 
+                        color: '#9ca3af', 
+                        backgroundColor: '#f3f4f6',
+                        fontStyle: 'italic'
+                      } : {}}
+                    >
+                      {product.name} - ${productPrice.toFixed(2)}
+                      {wouldExceedBudget && ` ${t('exceedsBudget')}`}
+                    </option>
+                  )
+                })}
+              </select>
+              <button
+                type="button"
+                onClick={() => setSizingChartOpen(true)}
+                className="shrink-0 px-4 py-2 border border-gray-300 rounded-md bg-white hover:bg-gray-50 focus:ring-2 focus:ring-[#663399] focus:ring-offset-1 text-gray-700 text-sm font-medium whitespace-nowrap"
+                aria-label={t('sizingChart')}
+              >
+                {t('sizingChart')}
+              </button>
+            </div>
             {!canAddMore && (
-              <p className="mt-1 text-xs text-red-600">Budget limit reached. Remove items to add more.</p>
+              <p className="mt-1 text-xs text-red-600">{t('budgetLimitReached')}</p>
             )}
           </div>
+
+          {/* Sizing chart modal - PDF shown based on language (en vs fr) */}
+          {sizingChartOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={() => setSizingChartOpen(false)}>
+              <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
+                <div className="flex justify-between items-center px-4 py-3 border-b">
+                  <h3 className="text-lg font-semibold text-gray-900">{t('sizingChartTitle')}</h3>
+                  <button
+                    type="button"
+                    onClick={() => setSizingChartOpen(false)}
+                    className="text-gray-500 hover:text-gray-700 text-2xl leading-none"
+                    aria-label={t('cancel')}
+                  >
+                    ×
+                  </button>
+                </div>
+                <iframe
+                  src={`/images/Sizechart_${language === 'fr' ? 'French' : 'English'}.pdf`}
+                  title={t('sizingChartTitle')}
+                  className="w-full flex-1 min-h-[70vh]"
+                />
+              </div>
+            </div>
+          )}
 
           {selectedProduct && (
             <div className="border-t pt-6 space-y-4">
@@ -416,7 +449,7 @@ export default function ProductPage() {
                   ) : (
                     <div className="w-full aspect-square bg-gray-100 rounded-lg shadow-md flex items-center justify-center border-2 border-gray-300">
                       <div className="text-center p-4">
-                        {!isYetiKit && <div className="text-4xl mb-2">📦</div>}
+                        <div className="text-4xl mb-2">📦</div>
                         <div className="text-sm text-gray-500 font-medium">{selectedProduct.name}</div>
                       </div>
                     </div>
@@ -445,112 +478,8 @@ export default function ProductPage() {
                 </div>
               </div>
 
-              {/* YETI Kit - Size buttons and individual color selection */}
-              {isYetiKit && (
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Select Size to Configure
-                    </label>
-                    <div className="grid grid-cols-3 gap-3">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setActiveYetiSize('8oz')
-                          setError('')
-                        }}
-                        className={`px-4 py-3 rounded-md border-2 font-medium transition-colors ${
-                          activeYetiSize === '8oz'
-                            ? 'border-[#663399] bg-[#663399] text-white'
-                            : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
-                        }`}
-                      >
-                        8oz Cup
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setActiveYetiSize('26oz')
-                          setError('')
-                        }}
-                        className={`px-4 py-3 rounded-md border-2 font-medium transition-colors ${
-                          activeYetiSize === '26oz'
-                            ? 'border-[#663399] bg-[#663399] text-white'
-                            : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
-                        }`}
-                      >
-                        26oz Bottle
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setActiveYetiSize('35oz')
-                          setError('')
-                        }}
-                        className={`px-4 py-3 rounded-md border-2 font-medium transition-colors ${
-                          activeYetiSize === '35oz'
-                            ? 'border-[#663399] bg-[#663399] text-white'
-                            : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
-                        }`}
-                      >
-                        35oz Tumbler
-                      </button>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Color for {activeYetiSize === '8oz' ? '8oz Cup' : activeYetiSize === '26oz' ? '26oz Bottle' : '35oz Tumbler'}
-                      {activeYetiSize === '8oz' && yeti8ozColor && <span className="text-green-600 ml-2">✓</span>}
-                      {activeYetiSize === '26oz' && yeti26ozColor && <span className="text-green-600 ml-2">✓</span>}
-                      {activeYetiSize === '35oz' && yeti35ozColor && <span className="text-green-600 ml-2">✓</span>}
-                    </label>
-                    <select
-                      value={
-                        activeYetiSize === '8oz' ? yeti8ozColor :
-                        activeYetiSize === '26oz' ? yeti26ozColor :
-                        yeti35ozColor
-                      }
-                      onChange={(e) => {
-                        const color = e.target.value
-                        if (activeYetiSize === '8oz') {
-                          setYeti8ozColor(color)
-                        } else if (activeYetiSize === '26oz') {
-                          setYeti26ozColor(color)
-                        } else {
-                          setYeti35ozColor(color)
-                        }
-                        setError('')
-                      }}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#663399] focus:border-transparent text-black bg-white"
-                    >
-                      <option value="">{t('selectColor')}</option>
-                      {selectedProduct.available_colors
-                        ?.filter(color => {
-                          if (activeYetiSize === '26oz' && color === 'White') {
-                            return false
-                          }
-                          return true
-                        })
-                        .map(color => (
-                          <option key={color} value={color}>{color}</option>
-                        ))}
-                    </select>
-                  </div>
-
-                  <div className="pt-2">
-                    <p className="text-xs text-gray-600 mb-1">Selection Progress:</p>
-                    <div className="flex gap-2">
-                      <div className={`flex-1 h-2 rounded ${yeti8ozColor ? 'bg-green-500' : 'bg-gray-200'}`} title="8oz"></div>
-                      <div className={`flex-1 h-2 rounded ${yeti26ozColor ? 'bg-green-500' : 'bg-gray-200'}`} title="26oz"></div>
-                      <div className={`flex-1 h-2 rounded ${yeti35ozColor ? 'bg-green-500' : 'bg-gray-200'}`} title="35oz"></div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Regular product color selection */}
-              {!isYetiKit && selectedProduct.requires_color && selectedProduct.available_colors && (
+              {/* Product color selection */}
+              {selectedProduct.requires_color && selectedProduct.available_colors && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     {t('color')}
@@ -571,7 +500,37 @@ export default function ProductPage() {
                 </div>
               )}
 
-              {selectedProduct.requires_size && selectedProduct.available_sizes && (
+              {/* Logo color dropdown - shown when product has logo_colors_available */}
+              {(() => {
+                const productWithLogo = selectedProduct as { logo_colors_available?: string }
+                const logoColors = productWithLogo.logo_colors_available
+                  ?.split(',')
+                  .map(s => s.trim())
+                  .filter(Boolean) ?? []
+                if (logoColors.length === 0) return null
+                return (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      {t('logoColor')}
+                    </label>
+                    <select
+                      value={selectedLogoColor}
+                      onChange={(e) => {
+                        setSelectedLogoColor(e.target.value)
+                        setError('')
+                      }}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#663399] focus:border-transparent text-black bg-white"
+                    >
+                      <option value="">{t('selectLogoColor')}</option>
+                      {logoColors.map(color => (
+                        <option key={color} value={color}>{color}</option>
+                      ))}
+                    </select>
+                  </div>
+                )
+              })()}
+
+              {selectedProduct.requires_size && parseSizeOptions(selectedProduct.available_sizes).length > 0 && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     {t('size')}
@@ -585,17 +544,43 @@ export default function ProductPage() {
                     className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#663399] focus:border-transparent text-black bg-white"
                   >
                     <option value="">{t('selectSize')}</option>
-                    {selectedProduct.available_sizes.map(size => (
+                    {parseSizeOptions(selectedProduct.available_sizes).map(size => (
                       <option key={size} value={size}>{size}</option>
                     ))}
                   </select>
                 </div>
               )}
 
+              {/* Quantity input */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  {t('quantity')}
+                </label>
+                <input
+                  type="number"
+                  min={1}
+                  max={selectedProduct ? Math.max(1, Math.floor(remainingBudget / (selectedProduct.price || 1))) : 99}
+                  value={selectedQuantity}
+                  onChange={(e) => {
+                    const val = parseInt(e.target.value, 10)
+                    if (!isNaN(val) && val >= 1) {
+                      const max = selectedProduct ? Math.floor(remainingBudget / (selectedProduct.price || 1)) : 99
+                      setSelectedQuantity(Math.min(val, Math.max(1, max)))
+                    }
+                  }}
+                  className="w-24 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#663399] focus:border-transparent text-black bg-white"
+                />
+                {selectedProduct && remainingBudget > 0 && (
+                  <p className="mt-1 text-xs text-gray-500">
+                    {t('maxToStayWithinBudget').replace('{max}', String(Math.floor(remainingBudget / (selectedProduct.price || 1))))}
+                  </p>
+                )}
+              </div>
+
               {/* Add to Cart Button */}
               <button
                 onClick={handleAddToCart}
-                disabled={!canAddMore || (selectedProduct.price || 0) + currentTotal > MAX_BUDGET}
+                disabled={!canAddMore || ((selectedProduct?.price || 0) * (selectedQuantity || 1) + currentTotal > MAX_BUDGET)}
                 className="w-full px-6 py-2 text-white rounded-md hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-[#663399] focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
                 style={{ backgroundColor: '#663399' }}
               >
@@ -639,6 +624,45 @@ export default function ProductPage() {
         </div>
       </div>
       </div>
+
+      {/* Budget Reminder Modal - encourage maxing out the $200 budget */}
+      {showBudgetReminder && (
+        <div 
+          className="fixed inset-0 flex items-center justify-center z-50 p-4"
+          onClick={() => setShowBudgetReminder(false)}
+          style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
+        >
+          <div 
+            className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="text-xl font-bold text-gray-900 mb-4">
+              {t('budgetReminderTitle')}
+            </h2>
+            <p className="text-gray-600 mb-6">
+              {t('budgetReminderMessage')} <strong style={{ color: '#663399' }}>${remainingBudget.toFixed(2)}</strong> {t('budgetReminderMessageEnd')}
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setShowBudgetReminder(false)}
+                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 font-medium"
+              >
+                {t('addMoreProducts')}
+              </button>
+              <button
+                onClick={() => {
+                  setShowBudgetReminder(false)
+                  proceedToShipping()
+                }}
+                className="px-4 py-2 text-white rounded-md hover:opacity-90 font-medium"
+                style={{ backgroundColor: '#663399' }}
+              >
+                {t('continueAnyway')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Abandon Cart Confirmation Modal */}
       {showAbandonConfirm && (
