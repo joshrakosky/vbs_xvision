@@ -9,7 +9,7 @@ import AdminExportButton from '@/components/AdminExportButton'
 import HelpIcon from '@/components/HelpIcon'
 import CartIcon from '@/components/CartIcon'
 import { getProductImagePath } from '@/lib/imageUtils'
-import { parseSizeOptions } from '@/lib/sizeUtils'
+import { parseSizeOptions, getSizeDisplayLabel } from '@/lib/sizeUtils'
 import { useLanguage } from '@/lib/languageContext'
 
 const MAX_BUDGET = 200
@@ -545,7 +545,7 @@ export default function ProductPage() {
                   >
                     <option value="">{t('selectSize')}</option>
                     {parseSizeOptions(selectedProduct.available_sizes).map(size => (
-                      <option key={size} value={size}>{size}</option>
+                      <option key={size} value={size}>{getSizeDisplayLabel(size, language)}</option>
                     ))}
                   </select>
                 </div>

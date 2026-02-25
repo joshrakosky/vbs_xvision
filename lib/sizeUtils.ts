@@ -1,10 +1,25 @@
 /**
  * Utility to parse size options from product data.
  * Handles spreadsheet formats: "S-5XL", "XS-2XL", "S, M, L", "OSFA"
+ * French display: TP, P, M, G, TG, 2TG, etc. - orders always export in English.
  */
 
-/** Standard size order for expanding ranges */
+/** Standard size order for expanding ranges (English - used for storage/export) */
 const SIZE_ORDER = ['XXS', 'XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL', '5XL']
+
+/** English → French size labels (per French sizing chart: TP=XS, P=S, M, G, TG, 2TG, etc.) */
+const EN_TO_FR: Record<string, string> = {
+  'XS': 'TP',
+  'S': 'P',
+  'M': 'M',
+  'L': 'G',
+  'XL': 'TG',
+  '2XL': '2TG',
+  '3XL': '3TG',
+  '4XL': '4TG',
+  '5XL': '5TG',
+  'OSFA': 'OSFA',
+}
 
 /**
  * Expand a size range like "S-5XL" into individual sizes
@@ -41,4 +56,16 @@ export function parseSizeOptions(sizes: string[] | null | undefined): string[] {
     }
   }
   return [...new Set(result)]
+}
+
+/**
+ * Get display label for a size based on language.
+ * French: TP, P, M, G, TG, 2TG, etc. English: XXS, XS, S, M, L, XL, etc.
+ * Orders/cart always store English for export.
+ */
+export function getSizeDisplayLabel(englishSize: string, language: 'en' | 'fr'): string {
+  if (language === 'fr') {
+    return EN_TO_FR[englishSize] ?? englishSize
+  }
+  return englishSize
 }
