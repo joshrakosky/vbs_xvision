@@ -10,13 +10,9 @@ export default function AdminExportButton() {
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    // Check if admin email was used (stored in sessionStorage)
+    // Admin access is granted via access code (stored in sessionStorage)
     const adminAuth = sessionStorage.getItem('adminAuth')
-    const userEmail = sessionStorage.getItem('userEmail')
-    const ADMIN_EMAIL = 'josh.rakosky@proforma.com'
-    
-    // User is admin if adminAuth is set OR if their email matches admin email
-    const isAdminUser = adminAuth === 'true' || (userEmail !== null && userEmail.toLowerCase() === ADMIN_EMAIL.toLowerCase())
+    const isAdminUser = adminAuth === 'true'
     setIsAdmin(Boolean(isAdminUser))
   }, [])
 

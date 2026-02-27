@@ -13,7 +13,7 @@ interface CartItem {
   logo_color?: string
 }
 
-const MAX_BUDGET = 200
+const MAX_BUDGET = 100
 
 export default function CartIcon() {
   const { t } = useLanguage()

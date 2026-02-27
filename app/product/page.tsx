@@ -12,7 +12,7 @@ import { getProductImagePath } from '@/lib/imageUtils'
 import { parseSizeOptions, getSizeDisplayLabel } from '@/lib/sizeUtils'
 import { useLanguage } from '@/lib/languageContext'
 
-const MAX_BUDGET = 200
+const MAX_BUDGET = 100
 
 interface CartItem {
   productId: string
@@ -174,8 +174,8 @@ export default function ProductPage() {
   }
 
   useEffect(() => {
-    const userEmail = sessionStorage.getItem('userEmail')
-    if (!userEmail) {
+    const accessGranted = sessionStorage.getItem('accessGranted')
+    if (!accessGranted) {
       router.push('/')
       return
     }
@@ -625,7 +625,7 @@ export default function ProductPage() {
       </div>
       </div>
 
-      {/* Budget Reminder Modal - encourage maxing out the $200 budget */}
+      {/* Budget Reminder Modal - encourage maxing out the $100 budget */}
       {showBudgetReminder && (
         <div 
           className="fixed inset-0 flex items-center justify-center z-50 p-4"

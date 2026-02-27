@@ -24,28 +24,21 @@ export default function ShippingPage() {
   const [error, setError] = useState('')
 
   useEffect(() => {
-    // Check if user is authenticated (has email in sessionStorage)
-    const userEmail = sessionStorage.getItem('userEmail')
-    if (!userEmail) {
-      router.push('/')
-      return
-    }
-
-    // Check if product selection exists
+    // Check if user has access (from code entry) and has cart
+    const accessGranted = sessionStorage.getItem('accessGranted')
     const product = sessionStorage.getItem('product')
-    if (!product) {
+    if (!accessGranted || !product) {
       router.push('/')
       return
     }
 
-    // Pre-populate shipping info with fixed address (read-only except for name)
+    // Pre-populate shipping info with fixed address; email is entered by user at checkout
     const savedShipping = sessionStorage.getItem('shipping')
     if (savedShipping) {
       try {
         const parsedShipping = JSON.parse(savedShipping)
-        // Keep saved name if exists, otherwise use empty (user needs to fill it)
         setFormData({ 
-          email: userEmail,
+          email: parsedShipping.email || '',
           name: parsedShipping.name || '',
           address: FIXED_SHIPPING_ADDRESS.address,
           address2: FIXED_SHIPPING_ADDRESS.address2,
@@ -55,9 +48,8 @@ export default function ShippingPage() {
           country: FIXED_SHIPPING_ADDRESS.country
         })
       } catch (e) {
-        // If parsing fails, use fixed address with userEmail
         setFormData({ 
-          email: userEmail,
+          email: '',
           name: '',
           address: FIXED_SHIPPING_ADDRESS.address,
           address2: FIXED_SHIPPING_ADDRESS.address2,
@@ -68,9 +60,8 @@ export default function ShippingPage() {
         })
       }
     } else {
-      // Set email from authentication and fixed address
       setFormData({ 
-        email: userEmail,
+        email: '',
         name: '',
         address: FIXED_SHIPPING_ADDRESS.address,
         address2: FIXED_SHIPPING_ADDRESS.address2,
@@ -145,11 +136,12 @@ export default function ShippingPage() {
                 id="email"
                 name="email"
                 value={formData.email}
-                readOnly
-                className="w-full px-4 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-600 cursor-not-allowed"
+                onChange={handleChange}
+                required
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#663399] focus:border-transparent text-black bg-white"
                 placeholder="your.email@example.com"
               />
-              <p className="mt-1 text-xs text-gray-500">{t('emailSetFromLogin')}</p>
+              <p className="mt-1 text-xs text-gray-500">{t('emailRequiredAtCheckout')}</p>
             </div>
 
             <div>

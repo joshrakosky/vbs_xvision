@@ -8,56 +8,38 @@ import HelpIcon from '@/components/HelpIcon'
 import AnimatedBackground from '@/components/AnimatedBackground'
 import { useLanguage } from '@/lib/languageContext'
 
-// Allowed email addresses (case-insensitive) - whitelist for VB Spine access
-const ALLOWED_EMAILS = [
-  'josh.rakosky@proforma.com',
-  'test@vbspineco.com',
-  'bryan.webb@proforma.com'
-  // Add more whitelisted emails here as needed
-]
-
-const ADMIN_EMAIL = 'josh.rakosky@proforma.com'
+// Access code for entry - email is collected during checkout
+const ACCESS_CODE = 'CestasSpine*2026!'
+// Admin code - grants export access (separate from access code)
+const ADMIN_CODE = 'admin'
 
 export default function LandingPage() {
   const router = useRouter()
   const { language, setLanguage, t } = useLanguage()
-  const [email, setEmail] = useState('')
+  const [code, setCode] = useState('')
   const [error, setError] = useState('')
 
   const handleStart = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    if (!email) {
-      setError(t('emailRequired'))
+    if (!code.trim()) {
+      setError(t('accessCodeRequired'))
       return
     }
 
-    // Normalize email to lowercase for comparison
-    const normalizedEmail = email.toLowerCase().trim()
+    if (code !== ACCESS_CODE && code !== ADMIN_CODE) {
+      setError(t('accessCodeInvalid'))
+      return
+    }
 
-    // Check if admin email
-    if (normalizedEmail === ADMIN_EMAIL.toLowerCase()) {
-      sessionStorage.setItem('userEmail', normalizedEmail)
+    // Grant access - email will be collected at checkout
+    sessionStorage.setItem('accessGranted', 'true')
+    if (code === ADMIN_CODE) {
       sessionStorage.setItem('adminAuth', 'true')
-      router.push('/product')
-      return
+    } else {
+      sessionStorage.removeItem('adminAuth')
     }
 
-    // Check if email is in allowed list (case-insensitive)
-    const isAllowed = ALLOWED_EMAILS.some(
-      allowedEmail => allowedEmail.toLowerCase() === normalizedEmail
-    )
-
-    if (!isAllowed) {
-      setError(t('emailNotAuthorized'))
-      return
-    }
-
-    // Store user email and clear admin auth for regular users
-    sessionStorage.setItem('userEmail', normalizedEmail)
-    sessionStorage.removeItem('adminAuth')
-
-    // Navigate to product selection page
     router.push('/product')
   }
 
@@ -66,14 +48,14 @@ export default function LandingPage() {
       <AnimatedBackground />
       <AdminExportButton />
       <HelpIcon />
-      <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8">
+      <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 py-10">
         <div className="text-center mb-6">
-          <div className="mb-3 flex justify-center">
+          <div className="mb-6 flex justify-center">
             <VBSLogo className="text-xl" />
           </div>
           
           {/* Language Toggle */}
-          <div className="mb-3 flex justify-center items-center gap-3">
+          <div className="mb-4 flex justify-center items-center gap-3">
             <span className={`text-sm font-medium ${language === 'en' ? 'text-gray-900' : 'text-gray-400'}`}>EN</span>
             <button
               type="button"
@@ -92,25 +74,25 @@ export default function LandingPage() {
           </div>
 
           <p className="text-gray-600">
-            {t('enterEmail')}
+            {t('enterAccessCode')}
           </p>
         </div>
 
         <form onSubmit={handleStart} className="space-y-6">
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-              {t('email')}
+            <label htmlFor="accessCode" className="block text-sm font-medium text-gray-700 mb-2">
+              {t('accessCode')}
             </label>
             <input
-              type="email"
-              id="email"
-              value={email}
+              type="text"
+              id="accessCode"
+              value={code}
               onChange={(e) => {
-                setEmail(e.target.value)
+                setCode(e.target.value)
                 setError('')
               }}
               className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#663399] focus:border-transparent text-black bg-white"
-              placeholder={t('emailPlaceholder')}
+              placeholder={t('accessCodePlaceholder')}
               required
             />
             {error && (
