@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { FIXED_SHIPPING_ADDRESS } from '@/lib/shippingConfig'
 import { getEnglishSize } from '@/lib/sizeUtils'
+import { getStockRules, isOutOfStock } from '@/lib/stockConfig'
 
 // Generate unique order number in format CES-001, CES-002, etc.
 async function generateOrderNumber(): Promise<string> {
@@ -81,12 +82,26 @@ export async function POST(request: NextRequest) {
     const orderItems: any[] = []
     
     for (const cartItem of cartItems) {
-      // Get product details
+      // Get product details (include vendor_item_num for stock validation)
       const { data: productData } = await supabase
         .from('cestes_products')
-        .select('name, customer_item_number')
+        .select('name, customer_item_number, vendor_item_num')
         .eq('id', cartItem.productId)
         .single()
+
+      // Stock validation - reject OOS items (defense in depth)
+      const stockRules = getStockRules(
+        productData?.vendor_item_num as string | undefined,
+        productData?.customer_item_number
+      )
+      if (stockRules && cartItem.color && cartItem.size) {
+        if (isOutOfStock(stockRules, cartItem.color, cartItem.size)) {
+          return NextResponse.json(
+            { error: `The selected ${cartItem.productName || 'item'} (${cartItem.color} / ${cartItem.size}) is out of stock and cannot be ordered.` },
+            { status: 400 }
+          )
+        }
+      }
 
       // Handle YETI Kit specially - creates 3 items (one for each size) with individual colors
       const isYetiKit = cartItem.isYetiKit || productData?.name === 'YETI Kit'

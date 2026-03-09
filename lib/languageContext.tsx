@@ -95,6 +95,9 @@ const translations: Record<Language, Record<string, string>> = {
     'emailBody': 'Thank you for your VB Spine order!\n\nYour Order Number: {orderNumber}\n\nPlease save this order number for your records.\n\nThank you for your order!',
     'sizingChart': 'Sizing Chart',
     'sizingChartTitle': 'Sizing Chart',
+    'outOfStock': ' (Out of stock)',
+    'lowStockNotation': ' (Low stock <10)',
+    'oosError': 'This item is out of stock and cannot be added.',
   },
   fr: {
     'enterEmail': 'Entrez votre e-mail pour commencer vos achats',
@@ -178,6 +181,9 @@ const translations: Record<Language, Record<string, string>> = {
     'emailBody': 'Merci pour votre commande VB Spine !\n\nVotre numéro de commande : {orderNumber}\n\nVeuillez conserver ce numéro pour vos dossiers.\n\nMerci pour votre commande !',
     'sizingChart': 'Guide des tailles',
     'sizingChartTitle': 'Guide des tailles',
+    'outOfStock': ' (Rupture de stock)',
+    'lowStockNotation': ' (Stock limité <10)',
+    'oosError': 'Cet article est en rupture de stock et ne peut pas être ajouté.',
   }
 }
 

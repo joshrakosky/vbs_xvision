@@ -10,6 +10,7 @@ import HelpIcon from '@/components/HelpIcon'
 import CartIcon from '@/components/CartIcon'
 import { getProductImagePath } from '@/lib/imageUtils'
 import { parseSizeOptions, getSizeDisplayLabel } from '@/lib/sizeUtils'
+import { getStockRules, isOutOfStock, isLowStock, getAvailableSizes, isColorFullyOOS } from '@/lib/stockConfig'
 import { useLanguage } from '@/lib/languageContext'
 
 const MAX_BUDGET = 100
@@ -43,7 +44,13 @@ export default function ProductPage() {
   const [showBudgetReminder, setShowBudgetReminder] = useState(false)
 
   const selectedProduct = products.find(p => p.id === selectedProductId)
-  
+  const stockRules = getStockRules(
+    selectedProduct?.vendor_item_num as string | undefined,
+    selectedProduct?.customer_item_number
+  )
+  const parsedSizes = selectedProduct ? parseSizeOptions(selectedProduct.available_sizes) : []
+  const availableSizesForColor = getAvailableSizes(stockRules, selectedColor, parsedSizes)
+
   // Calculate totals (price * quantity per item)
   const currentTotal = cart.reduce((sum, item) => sum + (item.price * (item.quantity ?? 1)), 0)
   const remainingBudget = MAX_BUDGET - currentTotal
@@ -91,6 +98,16 @@ export default function ProductPage() {
   useEffect(() => {
     cartRef.current = cart
   }, [cart])
+
+  // Clear selectedSize when it becomes OOS for the selected color (e.g. after color change)
+  useEffect(() => {
+    if (selectedProduct?.requires_size && selectedSize && stockRules) {
+      if (isOutOfStock(stockRules, selectedColor, selectedSize)) {
+        const available = getAvailableSizes(stockRules, selectedColor, parsedSizes)
+        setSelectedSize(available[0] || '')
+      }
+    }
+  }, [selectedColor, selectedProduct, stockRules])
 
   // Save cart to sessionStorage whenever it changes (from product page adding items)
   useEffect(() => {
@@ -193,7 +210,7 @@ export default function ProductPage() {
     try {
       const { data, error } = await supabase
         .from('cestes_products')
-        .select('*, thumbnail_url_black, thumbnail_url_white, color_thumbnails, customer_item_number, price')
+        .select('*, thumbnail_url_black, thumbnail_url_white, color_thumbnails, customer_item_number, vendor_item_num, price')
         .order('name')
 
       if (error) throw error
@@ -228,6 +245,12 @@ export default function ProductPage() {
 
       if (selectedProduct.requires_size && !selectedSize) {
         setError(t('pleaseSelectSize'))
+        return
+      }
+
+      // Stock validation - block OOS items
+      if (selectedProduct.requires_size && isOutOfStock(stockRules, selectedColor, selectedSize)) {
+        setError(t('oosError'))
         return
       }
 
@@ -361,14 +384,23 @@ export default function ProductPage() {
                 
                 const product = products.find(p => p.id === productId)
                 if (product) {
+                  const rules = getStockRules(product.vendor_item_num as string | undefined, product.customer_item_number)
+                  const sizes = parseSizeOptions(product?.available_sizes)
                   if (product?.requires_color && product.available_colors && product.available_colors.length > 0) {
-                    setSelectedColor(product.available_colors[0])
+                    // Pick first color that has available sizes (not fully OOS)
+                    const firstAvailableColor = product.available_colors.find(
+                      (c) => !isColorFullyOOS(rules, c, sizes)
+                    ) ?? product.available_colors[0]
+                    setSelectedColor(firstAvailableColor)
                   } else if (product?.requires_color && product.available_colors?.includes('Black')) {
                     setSelectedColor('Black')
                   }
-                  const parsedSizes = parseSizeOptions(product?.available_sizes)
-                  if (product?.requires_size && parsedSizes.length === 1) {
-                    setSelectedSize(parsedSizes[0])
+                  if (product?.requires_size && sizes.length === 1) {
+                    setSelectedSize(sizes[0])
+                  } else if (product?.requires_size && sizes.length > 0) {
+                    const firstColor = product.available_colors?.[0]
+                    const avail = getAvailableSizes(rules, firstColor, sizes)
+                    setSelectedSize(avail[0] || '')
                   }
                   const productWithLogo = product as { logo_colors_available?: string } | undefined
                   const logoColors = productWithLogo?.logo_colors_available
@@ -493,15 +525,24 @@ export default function ProductPage() {
                   <select
                     value={selectedColor}
                     onChange={(e) => {
-                      setSelectedColor(e.target.value)
+                      const newColor = e.target.value
+                      setSelectedColor(newColor)
                       setError('')
+                      // When color changes, set size to first available (current may be OOS for new color)
+                      const avail = getAvailableSizes(stockRules, newColor, parsedSizes)
+                      setSelectedSize(avail[0] || '')
                     }}
                     className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#663399] focus:border-transparent text-black bg-white"
                   >
                     <option value="">{t('selectColor')}</option>
-                    {selectedProduct.available_colors.map(color => (
-                      <option key={color} value={color}>{color}</option>
-                    ))}
+                    {selectedProduct.available_colors.map((color) => {
+                      const fullyOOS = isColorFullyOOS(stockRules, color, parsedSizes)
+                      return (
+                        <option key={color} value={color} disabled={fullyOOS}>
+                          {color}{fullyOOS ? t('outOfStock') : ''}
+                        </option>
+                      )
+                    })}
                   </select>
                 </div>
               )}
@@ -536,7 +577,7 @@ export default function ProductPage() {
                 )
               })()}
 
-              {selectedProduct.requires_size && parseSizeOptions(selectedProduct.available_sizes).length > 0 && (
+              {selectedProduct.requires_size && parsedSizes.length > 0 && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     {t('size')}
@@ -550,9 +591,14 @@ export default function ProductPage() {
                     className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#663399] focus:border-transparent text-black bg-white"
                   >
                     <option value="">{t('selectSize')}</option>
-                    {parseSizeOptions(selectedProduct.available_sizes).map(size => (
-                      <option key={size} value={size}>{getSizeDisplayLabel(size, language)}</option>
-                    ))}
+                    {availableSizesForColor.map((size) => {
+                      const low = isLowStock(stockRules, selectedColor, size)
+                      return (
+                        <option key={size} value={size}>
+                          {getSizeDisplayLabel(size, language)}{low ? t('lowStockNotation') : ''}
+                        </option>
+                      )
+                    })}
                   </select>
                 </div>
               )}
