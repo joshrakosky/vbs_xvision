@@ -162,11 +162,9 @@ export default function ReviewPage() {
               <p className="font-medium text-gray-900">{shipping.email}</p>
               <p className="font-medium text-gray-900">{shipping.name}</p>
               <p className="text-sm text-gray-600">{shipping.address}</p>
-              {shipping.address2 && <p className="text-sm text-gray-600">{shipping.address2}</p>}
-              <p className="text-sm text-gray-600">
-                {shipping.city}, {shipping.state} {shipping.zip}
-              </p>
+              <p className="text-sm text-gray-600">{shipping.city}</p>
               <p className="text-sm text-gray-600">{shipping.country}</p>
+              <p className="text-sm text-gray-600">{shipping.zip}</p>
             </div>
           </div>
 

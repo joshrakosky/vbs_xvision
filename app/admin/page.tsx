@@ -94,6 +94,7 @@ export default function AdminPage() {
         return {
           'Order Number': order.order_number,
           'Email': order.email,
+          'Full Name': order.shipping_name,
           'Product Name': item.product_name,
           'Customer Item #': item.customer_item_number || '',
           'Vendor Ref': product?.vendor_ref ?? '',
@@ -103,16 +104,9 @@ export default function AdminPage() {
           'Color': item.color || '',
           'Size': item.size || '',
           'Logo': product?.logo ?? '',
-          'Logo Colors': product?.logo_colors_available ?? '',
           'Logo Color': itemWithLogo.logo_color ?? '',
           'Logo Location': product?.logo_location ?? '',
           'Notes': product?.notes ?? '',
-          'Shipping Name': order.shipping_name,
-          'Shipping Address': order.shipping_address,
-          'Shipping City': order.shipping_city,
-          'Shipping State': order.shipping_state,
-          'Shipping ZIP': order.shipping_zip,
-          'Shipping Country': order.shipping_country,
           'Order Date': new Date(order.created_at).toLocaleDateString()
         }
       })
@@ -156,7 +150,6 @@ export default function AdminPage() {
         'Color': color,
         'Size': size,
         'Logo': product?.logo ?? '',
-        'Logo Colors': product?.logo_colors_available ?? '',
         'Logo Color': logoColor !== 'N/A' ? logoColor : '',
         'Logo Location': product?.logo_location ?? '',
         'Deco': product?.deco ?? '',
@@ -317,7 +310,9 @@ export default function AdminPage() {
                         <div>
                           {order.shipping_name}<br />
                           {order.shipping_address}<br />
-                          {order.shipping_city}, {order.shipping_state} {order.shipping_zip}
+                          {order.shipping_city}<br />
+                          {order.shipping_country}<br />
+                          {order.shipping_zip}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">

@@ -19,6 +19,8 @@ const EN_TO_FR: Record<string, string> = {
   '4XL': '4TG',
   '5XL': '5TG',
   'OSFA': 'OSFA',
+  'One Size': 'Taille unique',
+  'One Size Fits All': 'Taille unique',
 }
 
 /**
@@ -58,6 +60,11 @@ export function parseSizeOptions(sizes: string[] | null | undefined): string[] {
   return [...new Set(result)]
 }
 
+/** French → English (reverse of EN_TO_FR) - ensures exports always use English */
+const FR_TO_EN: Record<string, string> = Object.fromEntries(
+  Object.entries(EN_TO_FR).map(([en, fr]) => [fr, en])
+)
+
 /**
  * Get display label for a size based on language.
  * French: TP, P, M, G, TG, 2TG, etc. English: XXS, XS, S, M, L, XL, etc.
@@ -68,4 +75,13 @@ export function getSizeDisplayLabel(englishSize: string, language: 'en' | 'fr'):
     return EN_TO_FR[englishSize] ?? englishSize
   }
   return englishSize
+}
+
+/**
+ * Normalize size to English for order storage/export.
+ * If user somehow has French label (e.g. P, G, TG), converts to English (S, L, XL).
+ */
+export function getEnglishSize(size: string | null | undefined): string | null {
+  if (!size) return null
+  return FR_TO_EN[size] ?? size
 }

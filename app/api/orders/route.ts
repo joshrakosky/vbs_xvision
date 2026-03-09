@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { FIXED_SHIPPING_ADDRESS } from '@/lib/shippingConfig'
+import { getEnglishSize } from '@/lib/sizeUtils'
 
 // Generate unique order number in format CES-001, CES-002, etc.
 async function generateOrderNumber(): Promise<string> {
@@ -52,30 +53,18 @@ export async function POST(request: NextRequest) {
     // Handle cart (array of products) or single product
     const cartItems = Array.isArray(product) ? product : [product]
 
-    // Check for duplicate order by email (one order per email)
-    const { data: existingOrder } = await supabase
-      .from('cestes_orders')
-      .select('id')
-      .eq('email', email.toLowerCase())
-      .single()
-
-    if (existingOrder) {
-      return NextResponse.json(
-        { error: 'An order already exists for this email address. Only one order per email is allowed.' },
-        { status: 400 }
-      )
-    }
+    // Multiple orders per email allowed for testing. Run supabase-migration-allow-multiple-orders.sql in Supabase to drop UNIQUE(email) constraint.
 
     // Generate order number
     const orderNumber = await generateOrderNumber()
 
-    // Create order with fixed shipping address (user shipping info collected but not used)
+    // Create order: shipping_name = customer full name (for export); address uses fixed destination
     const { data: order, error: orderError } = await supabase
       .from('cestes_orders')
       .insert({
         email: email.toLowerCase(),
         order_number: orderNumber,
-        shipping_name: FIXED_SHIPPING_ADDRESS.name,
+        shipping_name: shipping?.name || FIXED_SHIPPING_ADDRESS.name,
         shipping_address: FIXED_SHIPPING_ADDRESS.address,
         shipping_address2: FIXED_SHIPPING_ADDRESS.address2 || null,
         shipping_city: FIXED_SHIPPING_ADDRESS.city,
@@ -129,7 +118,7 @@ export async function POST(request: NextRequest) {
             product_name: item.name,
             customer_item_number: productData?.customer_item_number || null,
             color: item.color,
-            size: item.size
+            size: getEnglishSize(item.size) ?? item.size
           })
         })
       } else {
@@ -142,7 +131,7 @@ export async function POST(request: NextRequest) {
             product_name: cartItem.productName || productData?.name || 'Unknown Product',
             customer_item_number: productData?.customer_item_number || null,
             color: cartItem.color || null,
-            size: cartItem.size || null,
+            size: getEnglishSize(cartItem.size) ?? cartItem.size ?? null,
             logo_color: cartItem.logo_color || null
           })
         }

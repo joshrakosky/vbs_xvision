@@ -69,6 +69,7 @@ export default function AdminExportButton() {
           return {
             'Order Number': order.order_number,
             'Email': order.email,
+            'Full Name': order.shipping_name,
             'Product Name': item.product_name,
             'Customer Item #': item.customer_item_number || '',
             'Vendor Ref': product?.vendor_ref ?? '',
@@ -78,16 +79,9 @@ export default function AdminExportButton() {
             'Color': item.color || '',
             'Size': item.size || '',
             'Logo': product?.logo ?? '',
-            'Logo Colors': product?.logo_colors_available ?? '',
             'Logo Color': itemWithLogo.logo_color ?? '',
             'Logo Location': product?.logo_location ?? '',
             'Notes': product?.notes ?? '',
-            'Shipping Name': order.shipping_name,
-            'Shipping Address': order.shipping_address,
-            'Shipping City': order.shipping_city,
-            'Shipping State': order.shipping_state,
-            'Shipping ZIP': order.shipping_zip,
-            'Shipping Country': order.shipping_country,
             'Order Date': new Date(order.created_at).toLocaleDateString()
           }
         })
@@ -132,7 +126,6 @@ export default function AdminExportButton() {
           'Color': color,
           'Size': size,
           'Logo': product?.logo ?? '',
-          'Logo Colors': product?.logo_colors_available ?? '',
           'Logo Color': logoColor !== 'N/A' ? logoColor : '',
           'Logo Location': product?.logo_location ?? '',
           'Deco': product?.deco ?? '',

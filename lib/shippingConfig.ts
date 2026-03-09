@@ -6,10 +6,10 @@
 
 export const FIXED_SHIPPING_ADDRESS = {
   name: 'VB Spine',
-  address: '123 Main Street', // TODO: Update with actual shipping address
+  address: '17 Chemin de Marticot',
   address2: '',
-  city: 'City', // TODO: Update with actual city
-  state: 'ST', // TODO: Update with actual state
-  zip: '12345', // TODO: Update with actual ZIP code
-  country: 'USA'
+  city: 'Cestas',
+  state: '',
+  zip: '33610',
+  country: 'France'
 }

@@ -173,22 +173,8 @@ export default function ShippingPage() {
               />
             </div>
 
-            <div>
-              <label htmlFor="address2" className="block text-sm font-medium text-gray-700 mb-1">
-                {t('addressLine2')}
-              </label>
-              <input
-                type="text"
-                id="address2"
-                name="address2"
-                value={formData.address2}
-                readOnly
-                className="w-full px-4 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-600 cursor-not-allowed"
-                placeholder="Apartment, suite, unit, building, floor, etc."
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
+            {/* City, zip, country on one line - each in own field, read-only */}
+            <div className="grid grid-cols-3 gap-4">
               <div>
                 <label htmlFor="city" className="block text-sm font-medium text-gray-700 mb-1">
                   {t('city')}
@@ -202,23 +188,6 @@ export default function ShippingPage() {
                   className="w-full px-4 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-600 cursor-not-allowed"
                 />
               </div>
-
-              <div>
-                <label htmlFor="state" className="block text-sm font-medium text-gray-700 mb-1">
-                  {t('state')}
-                </label>
-                <input
-                  type="text"
-                  id="state"
-                  name="state"
-                  value={formData.state}
-                  readOnly
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-600 cursor-not-allowed"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
               <div>
                 <label htmlFor="zip" className="block text-sm font-medium text-gray-700 mb-1">
                   ZIP Code
@@ -232,23 +201,18 @@ export default function ShippingPage() {
                   className="w-full px-4 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-600 cursor-not-allowed"
                 />
               </div>
-
               <div>
                 <label htmlFor="country" className="block text-sm font-medium text-gray-700 mb-1">
                   {t('country')}
                 </label>
-                <select
+                <input
+                  type="text"
                   id="country"
                   name="country"
                   value={formData.country}
-                  disabled
+                  readOnly
                   className="w-full px-4 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-600 cursor-not-allowed"
-                >
-                  <option value="USA">USA</option>
-                  <option value="Canada">Canada</option>
-                  <option value="India">India</option>
-                  <option value="Other">Other</option>
-                </select>
+                />
               </div>
             </div>
 

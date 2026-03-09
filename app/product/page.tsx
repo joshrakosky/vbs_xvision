@@ -49,6 +49,12 @@ export default function ProductPage() {
   const remainingBudget = MAX_BUDGET - currentTotal
   const canAddMore = remainingBudget > 0
 
+  // Cheapest product price - only show "add more" reminder if user can actually afford something
+  const minProductPrice = products.length > 0
+    ? Math.min(...products.map(p => p.price ?? Infinity))
+    : Infinity
+  const canAffordAnything = remainingBudget >= minProductPrice
+
   // Load cart from sessionStorage on mount
   useEffect(() => {
     const savedCart = sessionStorage.getItem('cart')
@@ -280,8 +286,8 @@ export default function ProductPage() {
       return
     }
 
-    // If budget isn't maxed, show reminder to encourage adding more
-    if (remainingBudget > 0) {
+    // If budget isn't maxed and user can afford at least one product, show reminder
+    if (remainingBudget > 0 && canAffordAnything) {
       setShowBudgetReminder(true)
       return
     }

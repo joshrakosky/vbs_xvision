@@ -91,6 +91,8 @@ const translations: Record<Language, Record<string, string>> = {
     'yourOrderNumber': 'Your Order Number:',
     'screenshotInfo': 'Screenshot this page or email yourself your order number by clicking the button below',
     'emailConfirmation': 'Email Order Confirmation',
+    'emailSubject': 'VB Spine Order Confirmation - {orderNumber}',
+    'emailBody': 'Thank you for your VB Spine order!\n\nYour Order Number: {orderNumber}\n\nPlease save this order number for your records.\n\nThank you for your order!',
     'sizingChart': 'Sizing Chart',
     'sizingChartTitle': 'Sizing Chart',
   },
@@ -172,6 +174,8 @@ const translations: Record<Language, Record<string, string>> = {
     'yourOrderNumber': 'Votre numéro de commande :',
     'screenshotInfo': 'Faites une capture d\'écran de cette page ou envoyez-vous votre numéro de commande par e-mail en cliquant sur le bouton ci-dessous',
     'emailConfirmation': 'E-mail de confirmation de commande',
+    'emailSubject': 'Confirmation de commande VB Spine - {orderNumber}',
+    'emailBody': 'Merci pour votre commande VB Spine !\n\nVotre numéro de commande : {orderNumber}\n\nVeuillez conserver ce numéro pour vos dossiers.\n\nMerci pour votre commande !',
     'sizingChart': 'Guide des tailles',
     'sizingChartTitle': 'Guide des tailles',
   }

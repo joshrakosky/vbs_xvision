@@ -47,7 +47,7 @@ export default function ConfirmationPage() {
         </p>
 
         <a
-          href={`mailto:?subject=VB Spine Order Confirmation - ${orderNumber}&body=Thank you for your VB Spine order!%0D%0A%0D%0AYour Order Number: ${orderNumber}%0D%0A%0D%0APlease save this order number for your records.%0D%0A%0D%0AThank you for your order!`}
+          href={`mailto:?subject=${encodeURIComponent(t('emailSubject').replace('{orderNumber}', orderNumber))}&body=${encodeURIComponent(t('emailBody').replace('{orderNumber}', orderNumber).replace(/\n/g, '\r\n'))}`}
           onClick={() => {
             // Clear session after a short delay to allow mailto to open
             setTimeout(() => {
