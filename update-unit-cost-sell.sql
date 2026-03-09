@@ -8,8 +8,11 @@ UPDATE cestes_products SET unit_cost = 28.75, unit_sell = 57.55, price = 57.55 W
 -- CES-VEST-WOMEN
 UPDATE cestes_products SET unit_cost = 28.75, unit_sell = 57.55, price = 57.55 WHERE customer_item_number = 'CES-VEST-WOMEN';
 
--- CES-CREW-MEN (no cost/sell provided - leave unchanged)
--- CES-CREW-WOMEN (no cost/sell provided - leave unchanged)
+-- CES-CREW-MEN (Ashburn Crew)
+UPDATE cestes_products SET unit_cost = 20, unit_sell = 51, price = 51 WHERE customer_item_number = 'CES-CREW-MEN';
+
+-- CES-CREW-WOMEN (Ashburn Crew)
+UPDATE cestes_products SET unit_cost = 20, unit_sell = 51, price = 51 WHERE customer_item_number = 'CES-CREW-WOMEN';
 
 -- CES-FLEECE-MEN
 UPDATE cestes_products SET unit_cost = 35.81, unit_sell = 71.65, price = 71.65 WHERE customer_item_number = 'CES-FLEECE-MEN';
