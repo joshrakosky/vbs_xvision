@@ -14,6 +14,7 @@ export default function ShippingPage() {
   const [formData, setFormData] = useState({
     email: '',
     name: '',
+    phone: '',
     address: '',
     address2: '',
     city: '',
@@ -40,6 +41,7 @@ export default function ShippingPage() {
         setFormData({ 
           email: parsedShipping.email || '',
           name: parsedShipping.name || '',
+          phone: parsedShipping.phone || '',
           address: FIXED_SHIPPING_ADDRESS.address,
           address2: FIXED_SHIPPING_ADDRESS.address2,
           city: FIXED_SHIPPING_ADDRESS.city,
@@ -51,6 +53,7 @@ export default function ShippingPage() {
         setFormData({ 
           email: '',
           name: '',
+          phone: '',
           address: FIXED_SHIPPING_ADDRESS.address,
           address2: FIXED_SHIPPING_ADDRESS.address2,
           city: FIXED_SHIPPING_ADDRESS.city,
@@ -63,6 +66,7 @@ export default function ShippingPage() {
       setFormData({ 
         email: '',
         name: '',
+        phone: '',
         address: FIXED_SHIPPING_ADDRESS.address,
         address2: FIXED_SHIPPING_ADDRESS.address2,
         city: FIXED_SHIPPING_ADDRESS.city,
@@ -85,6 +89,11 @@ export default function ShippingPage() {
 
     if (!formData.name) {
       setError('Please enter your full name for distribution purposes.')
+      return
+    }
+
+    if (!formData.phone || !formData.phone.trim()) {
+      setError(t('phoneRequired'))
       return
     }
 
@@ -156,6 +165,22 @@ export default function ShippingPage() {
                 onChange={handleChange}
                 required
                 className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#663399] focus:border-transparent text-black bg-white"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
+                {t('phoneNumber')} <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="tel"
+                id="phone"
+                name="phone"
+                value={formData.phone}
+                onChange={handleChange}
+                required
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#663399] focus:border-transparent text-black bg-white"
+                placeholder="+33 6 12 34 56 78"
               />
             </div>
 

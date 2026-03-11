@@ -43,6 +43,7 @@ export interface Order {
   email: string
   order_number: string
   shipping_name: string
+  shipping_phone?: string
   shipping_address: string
   shipping_city: string
   shipping_state: string

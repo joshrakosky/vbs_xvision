@@ -95,6 +95,7 @@ export default function AdminPage() {
           'Order Number': order.order_number,
           'Email': order.email,
           'Full Name': order.shipping_name,
+          'Phone': order.shipping_phone ?? '',
           'Product Name': item.product_name,
           'Customer Item #': item.customer_item_number || '',
           'Vendor Ref': product?.vendor_ref ?? '',
@@ -309,6 +310,7 @@ export default function AdminPage() {
                       <td className="px-6 py-4 text-sm text-gray-500">
                         <div>
                           {order.shipping_name}<br />
+                          {order.shipping_phone && <>{order.shipping_phone}<br /></>}
                           {order.shipping_address}<br />
                           {order.shipping_city}<br />
                           {order.shipping_country}<br />

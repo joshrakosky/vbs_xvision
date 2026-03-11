@@ -70,6 +70,7 @@ export default function AdminExportButton() {
             'Order Number': order.order_number,
             'Email': order.email,
             'Full Name': order.shipping_name,
+            'Phone': order.shipping_phone ?? '',
             'Product Name': item.product_name,
             'Customer Item #': item.customer_item_number || '',
             'Vendor Ref': product?.vendor_ref ?? '',

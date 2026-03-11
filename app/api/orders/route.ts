@@ -66,6 +66,7 @@ export async function POST(request: NextRequest) {
         email: email.toLowerCase(),
         order_number: orderNumber,
         shipping_name: shipping?.name || FIXED_SHIPPING_ADDRESS.name,
+        shipping_phone: shipping?.phone || null,
         shipping_address: FIXED_SHIPPING_ADDRESS.address,
         shipping_address2: FIXED_SHIPPING_ADDRESS.address2 || null,
         shipping_city: FIXED_SHIPPING_ADDRESS.city,

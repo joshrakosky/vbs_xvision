@@ -161,6 +161,7 @@ export default function ReviewPage() {
             <div className="bg-gray-50 rounded-lg p-4">
               <p className="font-medium text-gray-900">{shipping.email}</p>
               <p className="font-medium text-gray-900">{shipping.name}</p>
+              {shipping.phone && <p className="text-sm text-gray-600">{shipping.phone}</p>}
               <p className="text-sm text-gray-600">{shipping.address}</p>
               <p className="text-sm text-gray-600">{shipping.city}</p>
               <p className="text-sm text-gray-600">{shipping.country}</p>
