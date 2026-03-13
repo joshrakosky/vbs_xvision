@@ -6,41 +6,34 @@ import VBSLogo from '@/components/VBSLogo'
 import AdminExportButton from '@/components/AdminExportButton'
 import HelpIcon from '@/components/HelpIcon'
 import AnimatedBackground from '@/components/AnimatedBackground'
-import { useLanguage } from '@/lib/languageContext'
-
-// Access code for entry - email is collected during checkout
-const ACCESS_CODE = 'CestasSpine*2026!'
-// Admin code - grants export access (separate from access code)
-const ADMIN_CODE = 'admin'
+import { isEmailAllowed } from '@/lib/whitelist'
 
 export default function LandingPage() {
   const router = useRouter()
-  const { language, setLanguage, t } = useLanguage()
-  const [code, setCode] = useState('')
+  const [email, setEmail] = useState('')
   const [error, setError] = useState('')
 
-  const handleStart = async (e: React.FormEvent) => {
+  const handleStart = (e: React.FormEvent) => {
     e.preventDefault()
-    
-    if (!code.trim()) {
-      setError(t('accessCodeRequired'))
+
+    if (!email.trim()) {
+      setError('Please enter your email address')
       return
     }
 
-    if (code !== ACCESS_CODE && code !== ADMIN_CODE) {
-      setError(t('accessCodeInvalid'))
+    if (!isEmailAllowed(email)) {
+      setError('This email is not authorized to access the store. Please contact support.')
       return
     }
 
-    // Grant access - email will be collected at checkout
     sessionStorage.setItem('accessGranted', 'true')
-    if (code === ADMIN_CODE) {
+    sessionStorage.setItem('orderEmail', email.trim().toLowerCase())
+    if (email.trim().toLowerCase() === 'admin') {
       sessionStorage.setItem('adminAuth', 'true')
     } else {
       sessionStorage.removeItem('adminAuth')
     }
-
-    router.push('/product')
+    router.push('/instructions')
   }
 
   return (
@@ -53,46 +46,27 @@ export default function LandingPage() {
           <div className="mb-6 flex justify-center">
             <VBSLogo className="text-xl" />
           </div>
-          
-          {/* Language Toggle */}
-          <div className="mb-4 flex justify-center items-center gap-3">
-            <span className={`text-sm font-medium ${language === 'en' ? 'text-gray-900' : 'text-gray-400'}`}>EN</span>
-            <button
-              type="button"
-              onClick={() => setLanguage(language === 'en' ? 'fr' : 'en')}
-              className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#663399] focus:ring-offset-2"
-              style={{ backgroundColor: language === 'en' ? '#663399' : '#D9C2FF' }}
-              aria-label="Toggle language"
-            >
-              <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                  language === 'en' ? 'translate-x-1' : 'translate-x-6'
-                }`}
-              />
-            </button>
-            <span className={`text-sm font-medium ${language === 'fr' ? 'text-gray-900' : 'text-gray-400'}`}>FR</span>
-          </div>
 
           <p className="text-gray-600">
-            {t('enterAccessCode')}
+            Enter your email to start shopping
           </p>
         </div>
 
         <form onSubmit={handleStart} className="space-y-6">
           <div>
-            <label htmlFor="accessCode" className="block text-sm font-medium text-gray-700 mb-2">
-              {t('accessCode')}
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+              Email
             </label>
             <input
               type="text"
-              id="accessCode"
-              value={code}
+              id="email"
+              value={email}
               onChange={(e) => {
-                setCode(e.target.value)
+                setEmail(e.target.value)
                 setError('')
               }}
               className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#663399] focus:border-transparent text-black bg-white"
-              placeholder={t('accessCodePlaceholder')}
+              placeholder="Enter your email"
               required
             />
             {error && (
@@ -105,7 +79,7 @@ export default function LandingPage() {
             className="w-full text-white py-3 px-4 rounded-md hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-[#663399] focus:ring-offset-2 transition-colors font-medium"
             style={{ backgroundColor: '#663399' }}
           >
-            {t('startShopping')}
+            Start Shopping →
           </button>
         </form>
       </div>

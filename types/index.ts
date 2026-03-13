@@ -1,15 +1,15 @@
-// Type definitions for VB Spine
+// Type definitions for XVision Quick Store
 
 export interface Product {
   id: string
   name: string
   description: string
   thumbnail_url?: string
-  thumbnail_url_black?: string // Color-specific thumbnail for black
-  thumbnail_url_white?: string // Color-specific thumbnail for white
-  color_thumbnails?: Record<string, string> // Flexible color-to-thumbnail mapping (JSONB)
+  thumbnail_url_black?: string
+  thumbnail_url_white?: string
+  color_thumbnails?: Record<string, string>
   specs?: string
-  category: 'choice1' | 'choice2' // Which product choice this belongs to
+  category: string // bags, water_bottle, full_zip_mens, vest_mens, etc.
   requires_color: boolean
   requires_size: boolean
   available_colors?: string[]
@@ -45,10 +45,12 @@ export interface Order {
   shipping_name: string
   shipping_phone?: string
   shipping_address: string
+  shipping_address2?: string
   shipping_city: string
   shipping_state: string
   shipping_zip: string
   shipping_country: string
+  name_badge_text?: string
   created_at: string
 }
 
@@ -57,10 +59,11 @@ export interface OrderItem {
   order_id: string
   product_id: string
   product_name: string
-  customer_item_number?: string // SKU for backend tracking
+  customer_item_number?: string
   color?: string
   size?: string
-  logo_color?: string // Selected logo color for order fulfillment
+  logo_color?: string
+  custom_text?: string // Name badge display text
   created_at: string
 }
 

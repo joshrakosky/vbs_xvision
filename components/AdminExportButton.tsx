@@ -24,16 +24,16 @@ export default function AdminExportButton() {
 
       // Fetch all orders with their items
       const { data: ordersData, error: ordersError } = await supabase
-        .from('cestes_orders')
+        .from('xvision_orders')
         .select('*')
         .order('created_at', { ascending: false })
 
       if (ordersError) throw ordersError
 
-      // Fetch all products with fulfillment columns for export
+      // Fetch all products for export (category used for journal color default)
       const { data: productsData, error: productsError } = await supabase
-        .from('cestes_products')
-        .select('id, deco, vendor_ref, vendor_item_num, unit_cost, unit_sell, logo, logo_colors_available, logo_location, notes')
+        .from('xvision_products')
+        .select('id, category, deco, vendor_ref, vendor_item_num')
 
       if (productsError) throw productsError
 
@@ -47,7 +47,7 @@ export default function AdminExportButton() {
       const ordersWithItems: OrderWithItems[] = await Promise.all(
         (ordersData || []).map(async (order) => {
           const { data: items, error: itemsError } = await supabase
-            .from('cestes_order_items')
+            .from('xvision_order_items')
             .select('*')
             .eq('order_id', order.id)
             .order('created_at')
@@ -61,46 +61,64 @@ export default function AdminExportButton() {
         })
       )
 
-      // Sheet 1: Detailed Orders (one row per item)
+      // Helper: journal items export with Grey color for processing
+      const getExportColor = (item: { product_id?: string; color?: string }) => {
+        const product = item.product_id ? productMap.get(item.product_id) : undefined
+        const isJournal = (product as { category?: string })?.category === 'journal'
+        if (isJournal) return 'Grey'
+        return item.color || ''
+      }
+
+      // Sheet 1: Orders (one row per order - order-level info only)
+      const ordersSheetData = ordersWithItems.map((order) => ({
+        'Order Number': order.order_number,
+        'Email': order.email,
+        'Full Name': order.shipping_name,
+        'Phone': order.shipping_phone ?? '',
+        'Address': order.shipping_address ?? '',
+        'Address 2': order.shipping_address2 ?? '',
+        'City': order.shipping_city ?? '',
+        'State': order.shipping_state ?? '',
+        'Zip': order.shipping_zip ?? '',
+        'Country': order.shipping_country ?? 'USA',
+      }))
+
+      // Sheet 2: Detailed Orders (one row per item, no unit cost/sell, logo, notes)
       const detailedData = ordersWithItems.flatMap(order => {
         return order.items.map((item) => {
           const product = item.product_id ? productMap.get(item.product_id) : undefined
-          const itemWithLogo = item as { logo_color?: string }
+          const itemWithCustom = item as { custom_text?: string }
           return {
             'Order Number': order.order_number,
             'Email': order.email,
             'Full Name': order.shipping_name,
             'Phone': order.shipping_phone ?? '',
             'Product Name': item.product_name,
+            'Name Badge Text': itemWithCustom.custom_text ?? '',
             'Customer Item #': item.customer_item_number || '',
             'Vendor Ref': product?.vendor_ref ?? '',
             'Vendor Item #': product?.vendor_item_num ?? '',
-            'Unit Cost': product?.unit_cost ?? '',
-            'Unit Sell': product?.unit_sell ?? '',
-            'Color': item.color || '',
+            'Color': getExportColor(item),
             'Size': item.size || '',
-            'Logo': product?.logo ?? '',
-            'Logo Color': itemWithLogo.logo_color ?? '',
-            'Logo Location': product?.logo_location ?? '',
-            'Notes': product?.notes ?? '',
             'Order Date': new Date(order.created_at).toLocaleDateString()
           }
         })
       })
 
-      // Sheet 2: Distribution Summary (grouped by product/color/size/logo color)
+      // Sheet 3: Distribution Summary (grouped by product/color/size/name badge text)
       type SummaryEntry = { quantity: number; product: Record<string, unknown> | undefined }
       const summaryMap = new Map<string, SummaryEntry>()
       
       ordersWithItems.forEach(order => {
         order.items.forEach(item => {
-          const itemWithLogo = item as { logo_color?: string }
+          const itemWithCustom = item as { custom_text?: string }
+          const exportColor = getExportColor(item)
           const key = [
             item.product_name,
             item.customer_item_number || '',
-            item.color || 'N/A',
+            exportColor || 'N/A',
             item.size || 'N/A',
-            itemWithLogo.logo_color || 'N/A'
+            itemWithCustom.custom_text || 'N/A'
           ].join('|')
           
           const product = item.product_id ? productMap.get(item.product_id) : undefined
@@ -115,51 +133,47 @@ export default function AdminExportButton() {
 
       // Convert map to array for Excel
       const summaryData = Array.from(summaryMap.entries()).map(([key, data]) => {
-        const [productName, customerItem, color, size, logoColor] = key.split('|')
+        const parts = key.split('|')
+        const [productName, customerItem, color, size, customText] = parts
         const product = data.product
         return {
           'Product Name': productName,
           'Customer Item #': customerItem,
           'Vendor Ref': product?.vendor_ref ?? '',
           'Vendor Item #': product?.vendor_item_num ?? '',
-          'Unit Cost': product?.unit_cost ?? '',
-          'Unit Sell': product?.unit_sell ?? '',
           'Color': color,
           'Size': size,
-          'Logo': product?.logo ?? '',
-          'Logo Color': logoColor !== 'N/A' ? logoColor : '',
-          'Logo Location': product?.logo_location ?? '',
+          'Name Badge Text': customText !== 'N/A' ? customText : '',
           'Deco': product?.deco ?? '',
-          'Notes': product?.notes ?? '',
           'Quantity': data.quantity
         }
       }).sort((a, b) => {
-        // Sort by product name, color, size, logo color
         if (a['Product Name'] !== b['Product Name']) {
           return (a['Product Name'] as string).localeCompare(b['Product Name'] as string)
         }
         if (a['Color'] !== b['Color']) {
           return (a['Color'] as string).localeCompare(b['Color'] as string)
         }
-        if (a['Size'] !== b['Size']) {
-          return (a['Size'] as string).localeCompare(b['Size'] as string)
-        }
-        return (a['Logo Color'] as string).localeCompare(b['Logo Color'] as string)
+        return (a['Size'] as string).localeCompare(b['Size'] as string)
       })
 
-      // Create workbook with two sheets
+      // Create workbook with three sheets
       const wb = XLSX.utils.book_new()
       
-      // Detailed Orders sheet
+      // Sheet 1: Orders (order-level info)
+      const wsOrders = XLSX.utils.json_to_sheet(ordersSheetData)
+      XLSX.utils.book_append_sheet(wb, wsOrders, 'Orders')
+      
+      // Sheet 2: Detailed Orders (line items)
       const wsDetailed = XLSX.utils.json_to_sheet(detailedData)
       XLSX.utils.book_append_sheet(wb, wsDetailed, 'Detailed Orders')
       
-      // Distribution Summary sheet
+      // Sheet 3: Distribution Summary (grouped quantities)
       const wsSummary = XLSX.utils.json_to_sheet(summaryData)
       XLSX.utils.book_append_sheet(wb, wsSummary, 'Distribution Summary')
 
       // Generate filename with current date
-      const filename = `cestes-orders-${new Date().toISOString().split('T')[0]}.xlsx`
+      const filename = `xvision-orders-${new Date().toISOString().split('T')[0]}.xlsx`
 
       // Write file
       XLSX.writeFile(wb, filename)
@@ -180,7 +194,7 @@ export default function AdminExportButton() {
       disabled={loading}
       className="fixed bottom-4 right-4 z-50 w-10 h-10 rounded-full flex items-center justify-center text-white transition-opacity shadow-md hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
       style={{ backgroundColor: '#663399' }}
-      title="Export all orders to Excel (Admin only)"
+      title="Export orders to Excel: Orders, Detailed Orders, Distribution Summary (Admin only)"
       aria-label="Export orders"
     >
       {loading ? (

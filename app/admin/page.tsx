@@ -26,6 +26,7 @@ export default function AdminPage() {
     e.preventDefault()
     if (password === ADMIN_PASSWORD) {
       setAuthenticated(true)
+      sessionStorage.setItem('adminAuth', 'true')
       setError('')
     } else {
       setError('Incorrect password')
@@ -38,7 +39,7 @@ export default function AdminPage() {
       
       // Fetch orders with their items
       const { data: ordersData, error: ordersError } = await supabase
-        .from('cestes_orders')
+        .from('xvision_orders')
         .select('*')
         .order('created_at', { ascending: false })
 
@@ -48,7 +49,7 @@ export default function AdminPage() {
       const ordersWithItems = await Promise.all(
         (ordersData || []).map(async (order) => {
           const { data: items, error: itemsError } = await supabase
-            .from('cestes_order_items')
+            .from('xvision_order_items')
             .select('*')
             .eq('order_id', order.id)
             .order('created_at')
@@ -71,10 +72,9 @@ export default function AdminPage() {
   }
 
   const exportToExcel = async () => {
-    // Fetch all products with fulfillment columns for export
     const { data: productsData, error: productsError } = await supabase
-      .from('cestes_products')
-      .select('id, deco, vendor_ref, vendor_item_num, unit_cost, unit_sell, logo, logo_colors_available, logo_location, notes')
+      .from('xvision_products')
+      .select('id, category, deco, vendor_ref, vendor_item_num')
 
     if (productsError) {
       alert('Failed to load product information. Please try again.')
@@ -86,48 +86,63 @@ export default function AdminPage() {
       productMap.set(product.id, product as Record<string, unknown>)
     })
 
-    // Sheet 1: Detailed Orders (one row per item)
+    const getExportColor = (item: { product_id?: string; color?: string }) => {
+      const product = item.product_id ? productMap.get(item.product_id) : undefined
+      const isJournal = (product as { category?: string })?.category === 'journal'
+      if (isJournal) return 'Grey'
+      return item.color || ''
+    }
+
+    // Sheet 1: Orders (order-level info)
+    const ordersData = orders.map((order) => ({
+      'Order Number': order.order_number,
+      'Email': order.email,
+      'Full Name': order.shipping_name,
+      'Phone': order.shipping_phone ?? '',
+      'Address': order.shipping_address ?? '',
+      'Address 2': order.shipping_address2 ?? '',
+      'City': order.shipping_city ?? '',
+      'State': order.shipping_state ?? '',
+      'Zip': order.shipping_zip ?? '',
+      'Country': order.shipping_country ?? 'USA',
+    }))
+
+    // Sheet 2: Detailed Orders (line items)
     const detailedData = orders.flatMap(order => {
       return order.items.map((item) => {
         const product = item.product_id ? productMap.get(item.product_id) : undefined
-        const itemWithLogo = item as { logo_color?: string }
+        const itemWithCustom = item as { custom_text?: string }
         return {
           'Order Number': order.order_number,
           'Email': order.email,
           'Full Name': order.shipping_name,
           'Phone': order.shipping_phone ?? '',
           'Product Name': item.product_name,
+          'Name Badge Text': itemWithCustom.custom_text ?? '',
           'Customer Item #': item.customer_item_number || '',
           'Vendor Ref': product?.vendor_ref ?? '',
           'Vendor Item #': product?.vendor_item_num ?? '',
-          'Unit Cost': product?.unit_cost ?? '',
-          'Unit Sell': product?.unit_sell ?? '',
-          'Color': item.color || '',
+          'Color': getExportColor(item),
           'Size': item.size || '',
-          'Logo': product?.logo ?? '',
-          'Logo Color': itemWithLogo.logo_color ?? '',
-          'Logo Location': product?.logo_location ?? '',
-          'Notes': product?.notes ?? '',
           'Order Date': new Date(order.created_at).toLocaleDateString()
         }
       })
     })
 
-    // Sheet 2: Distribution Summary (grouped by product/color/size/logo color)
+    // Sheet 3: Distribution Summary
     type SummaryEntry = { quantity: number; product: Record<string, unknown> | undefined }
     const summaryMap = new Map<string, SummaryEntry>()
-    
     orders.forEach(order => {
       order.items.forEach(item => {
-        const itemWithLogo = item as { logo_color?: string }
+        const itemWithCustom = item as { custom_text?: string }
+        const exportColor = getExportColor(item)
         const key = [
           item.product_name,
           item.customer_item_number || '',
-          item.color || 'N/A',
+          exportColor || 'N/A',
           item.size || 'N/A',
-          itemWithLogo.logo_color || 'N/A'
+          itemWithCustom.custom_text || 'N/A'
         ].join('|')
-        
         const product = item.product_id ? productMap.get(item.product_id) : undefined
         const existing = summaryMap.get(key)
         if (existing) {
@@ -139,22 +154,18 @@ export default function AdminPage() {
     })
 
     const summaryData = Array.from(summaryMap.entries()).map(([key, data]) => {
-      const [productName, customerItem, color, size, logoColor] = key.split('|')
+      const parts = key.split('|')
+      const [productName, customerItem, color, size, customText] = parts
       const product = data.product
       return {
         'Product Name': productName,
         'Customer Item #': customerItem,
         'Vendor Ref': product?.vendor_ref ?? '',
         'Vendor Item #': product?.vendor_item_num ?? '',
-        'Unit Cost': product?.unit_cost ?? '',
-        'Unit Sell': product?.unit_sell ?? '',
         'Color': color,
         'Size': size,
-        'Logo': product?.logo ?? '',
-        'Logo Color': logoColor !== 'N/A' ? logoColor : '',
-        'Logo Location': product?.logo_location ?? '',
+        'Name Badge Text': customText !== 'N/A' ? customText : '',
         'Deco': product?.deco ?? '',
-        'Notes': product?.notes ?? '',
         'Quantity': data.quantity
       }
     }).sort((a, b) => {
@@ -164,28 +175,14 @@ export default function AdminPage() {
       if (a['Color'] !== b['Color']) {
         return (a['Color'] as string).localeCompare(b['Color'] as string)
       }
-      if (a['Size'] !== b['Size']) {
-        return (a['Size'] as string).localeCompare(b['Size'] as string)
-      }
-      return (a['Logo Color'] as string).localeCompare(b['Logo Color'] as string)
+      return (a['Size'] as string).localeCompare(b['Size'] as string)
     })
 
-    // Create workbook with two sheets
     const wb = XLSX.utils.book_new()
-    
-    // Detailed Orders sheet
-    const wsDetailed = XLSX.utils.json_to_sheet(detailedData)
-    XLSX.utils.book_append_sheet(wb, wsDetailed, 'Detailed Orders')
-    
-    // Distribution Summary sheet
-    const wsSummary = XLSX.utils.json_to_sheet(summaryData)
-    XLSX.utils.book_append_sheet(wb, wsSummary, 'Distribution Summary')
-
-    // Generate filename with current date
-    const filename = `cestes-orders-${new Date().toISOString().split('T')[0]}.xlsx`
-
-    // Write file
-    XLSX.writeFile(wb, filename)
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(ordersData), 'Orders')
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(detailedData), 'Detailed Orders')
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(summaryData), 'Distribution Summary')
+    XLSX.writeFile(wb, `xvision-orders-${new Date().toISOString().split('T')[0]}.xlsx`)
   }
 
   if (!authenticated) {
@@ -234,7 +231,7 @@ export default function AdminPage() {
         <div className="bg-white rounded-lg shadow-lg p-8">
           <div className="flex justify-between items-center mb-6">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">VB Spine Order Management</h1>
+              <h1 className="text-3xl font-bold text-gray-900">XVision Order Management</h1>
               <p className="text-gray-600 mt-1">Total Orders: {orders.length}</p>
             </div>
             <div className="flex gap-4">
@@ -248,7 +245,7 @@ export default function AdminPage() {
                 onClick={exportToExcel}
                 disabled={orders.length === 0}
                 className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                title="Exports two sheets: Detailed Orders and Distribution Summary"
+                title="Exports three sheets: Orders, Detailed Orders, and Distribution Summary"
               >
                 Export to Excel
               </button>
@@ -303,6 +300,7 @@ export default function AdminPage() {
                               {item.color && ` - ${item.color}`}
                               {item.size && ` (${item.size})`}
                               {(item as { logo_color?: string }).logo_color && ` Logo: ${(item as { logo_color?: string }).logo_color}`}
+                              {(item as { custom_text?: string }).custom_text && ` Name: "${(item as { custom_text?: string }).custom_text}"`}
                             </div>
                           ))}
                         </div>
@@ -312,9 +310,9 @@ export default function AdminPage() {
                           {order.shipping_name}<br />
                           {order.shipping_phone && <>{order.shipping_phone}<br /></>}
                           {order.shipping_address}<br />
-                          {order.shipping_city}<br />
-                          {order.shipping_country}<br />
-                          {order.shipping_zip}
+                          {order.shipping_address2 && <>{order.shipping_address2}<br /></>}
+                          {order.shipping_city}, {order.shipping_state} {order.shipping_zip}<br />
+                          {order.shipping_country}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">

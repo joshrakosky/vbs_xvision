@@ -3,11 +3,11 @@
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 
-/** Redirect legacy /product route to /bags */
-export default function ProductPage() {
+/** Redirect legacy /wearables route to /wearables-1 */
+export default function WearablesPage() {
   const router = useRouter()
   useEffect(() => {
-    router.replace('/instructions')
+    router.replace('/wearables-1')
   }, [router])
   return (
     <div className="min-h-screen flex items-center justify-center">

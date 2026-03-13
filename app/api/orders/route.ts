@@ -1,177 +1,152 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
-import { FIXED_SHIPPING_ADDRESS } from '@/lib/shippingConfig'
-import { getEnglishSize } from '@/lib/sizeUtils'
-import { getStockRules, isOutOfStock } from '@/lib/stockConfig'
 
-// Generate unique order number in format CES-001, CES-002, etc.
+/** Generate order number: XVS-001, XVS-002, etc. */
 async function generateOrderNumber(): Promise<string> {
-  // Get the highest existing order number
   const { data: orders, error } = await supabase
-    .from('cestes_orders')
+    .from('xvision_orders')
     .select('order_number')
     .order('created_at', { ascending: false })
     .limit(1)
 
   if (error) {
     console.error('Error fetching orders:', error)
-    // Fallback: start from 1 if there's an error
-    return 'CES-001'
+    return 'XVS-001'
   }
 
-  if (!orders || orders.length === 0) {
-    // First order
-    return 'CES-001'
-  }
+  if (!orders || orders.length === 0) return 'XVS-001'
 
-  // Extract number from existing order (e.g., "CES-001" -> 1)
   const lastOrderNumber = orders[0].order_number
-  const match = lastOrderNumber.match(/CES-(\d+)/i)
-  
+  const match = lastOrderNumber.match(/XVS-(\d+)/i)
   if (match) {
-    const lastNumber = parseInt(match[1], 10)
-    const nextNumber = lastNumber + 1
-    return `CES-${String(nextNumber).padStart(3, '0')}`
+    const nextNumber = parseInt(match[1], 10) + 1
+    return `XVS-${String(nextNumber).padStart(3, '0')}`
   }
-
-  // If format doesn't match, start from 1
-  return 'CES-001'
+  return 'XVS-001'
 }
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { email, shipping, product } = body
+    const { email, shipping, cart } = body
 
-    // Validate required fields
-    if (!email || !shipping || !product) {
-      return NextResponse.json(
-        { error: 'Missing required fields' },
-        { status: 400 }
-      )
+    if (!email || !shipping || !cart) {
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
-    // Handle cart (array of products) or single product
-    const cartItems = Array.isArray(product) ? product : [product]
-
-    // Multiple orders per email allowed for testing. Run supabase-migration-allow-multiple-orders.sql in Supabase to drop UNIQUE(email) constraint.
-
-    // Generate order number
+    const cartItems = Array.isArray(cart) ? cart : [cart]
     const orderNumber = await generateOrderNumber()
 
-    // Create order: shipping_name = customer full name (for export); address uses fixed destination
+    // Name badge text for order (from name_badge cart item)
+    const badgeItem = cartItems.find((i: { category?: string }) => i.category === 'name_badge')
+    const nameBadgeText = badgeItem?.customText || null
+
     const { data: order, error: orderError } = await supabase
-      .from('cestes_orders')
+      .from('xvision_orders')
       .insert({
         email: email.toLowerCase(),
         order_number: orderNumber,
-        shipping_name: shipping?.name || FIXED_SHIPPING_ADDRESS.name,
-        shipping_phone: shipping?.phone || null,
-        shipping_address: FIXED_SHIPPING_ADDRESS.address,
-        shipping_address2: FIXED_SHIPPING_ADDRESS.address2 || null,
-        shipping_city: FIXED_SHIPPING_ADDRESS.city,
-        shipping_state: FIXED_SHIPPING_ADDRESS.state,
-        shipping_zip: FIXED_SHIPPING_ADDRESS.zip,
-        shipping_country: FIXED_SHIPPING_ADDRESS.country
+        shipping_name: shipping.name || '',
+        shipping_phone: shipping.phone || null,
+        shipping_address: shipping.address || '',
+        shipping_address2: shipping.address2 || null,
+        shipping_city: shipping.city || '',
+        shipping_state: shipping.state || '',
+        shipping_zip: shipping.zip || '',
+        shipping_country: shipping.country || 'USA',
+        name_badge_text: nameBadgeText,
       })
       .select()
       .single()
 
     if (orderError) throw orderError
 
-    // Process all cart items
-    const orderItems: any[] = []
-    
-    for (const cartItem of cartItems) {
-      // Get product details (include vendor_item_num for stock validation)
-      const { data: productData } = await supabase
-        .from('cestes_products')
-        .select('name, customer_item_number, vendor_item_num')
-        .eq('id', cartItem.productId)
-        .single()
+    const orderItems: Array<{
+      order_id: string
+      product_id: string
+      product_name: string
+      customer_item_number?: string
+      color?: string
+      size?: string
+      logo_color?: string
+      custom_text?: string
+    }> = []
 
-      // Stock validation - reject OOS items (defense in depth)
-      const stockRules = getStockRules(
-        productData?.vendor_item_num as string | undefined,
-        productData?.customer_item_number
-      )
-      if (stockRules && cartItem.color && cartItem.size) {
-        if (isOutOfStock(stockRules, cartItem.color, cartItem.size)) {
-          return NextResponse.json(
-            { error: `The selected ${cartItem.productName || 'item'} (${cartItem.color} / ${cartItem.size}) is out of stock and cannot be ordered.` },
-            { status: 400 }
-          )
-        }
+    for (const item of cartItems) {
+      // Scrub set: 2 order items (top + bottom)
+      if (item.scrubTopId && item.scrubBottomId) {
+        const { data: topProduct } = await supabase
+          .from('xvision_products')
+          .select('name, customer_item_number')
+          .eq('id', item.scrubTopId)
+          .single()
+        const { data: bottomProduct } = await supabase
+          .from('xvision_products')
+          .select('name, customer_item_number')
+          .eq('id', item.scrubBottomId)
+          .single()
+
+        orderItems.push({
+          order_id: order.id,
+          product_id: item.scrubTopId,
+          product_name: topProduct?.name || item.scrubTopName || 'Scrub Top',
+          customer_item_number: topProduct?.customer_item_number || undefined,
+          size: item.scrubTopSize || null,
+          color: item.scrubTopColor || 'Black',
+        })
+        orderItems.push({
+          order_id: order.id,
+          product_id: item.scrubBottomId,
+          product_name: bottomProduct?.name || item.scrubBottomName || 'Scrub Bottom',
+          customer_item_number: bottomProduct?.customer_item_number || undefined,
+          size: item.scrubBottomSize || null,
+          color: item.scrubBottomColor || 'Black',
+        })
+        continue
       }
 
-      // Handle YETI Kit specially - creates 3 items (one for each size) with individual colors
-      const isYetiKit = cartItem.isYetiKit || productData?.name === 'YETI Kit'
-      
-      if (isYetiKit && cartItem.yeti8ozColor && cartItem.yeti26ozColor && cartItem.yeti35ozColor) {
-        // Create 3 order items for YETI Kit
-        const yetiItems = [
-          {
-            size: '8oz',
-            name: 'YETI Rambler 8oz Stackable Cup',
-            color: cartItem.yeti8ozColor
-          },
-          {
-            size: '26oz',
-            name: 'YETI Rambler 26oz Straw Bottle',
-            color: cartItem.yeti26ozColor
-          },
-          {
-            size: '35oz',
-            name: 'YETI Rambler 35oz Tumbler with Straw Lid',
-            color: cartItem.yeti35ozColor
-          }
-        ]
-        
-        yetiItems.forEach(item => {
-          orderItems.push({
-            order_id: order.id,
-            product_id: cartItem.productId,
-            product_name: item.name,
-            customer_item_number: productData?.customer_item_number || null,
-            color: item.color,
-            size: getEnglishSize(item.size) ?? item.size
-          })
+      // Regular items (bags, water_bottle, wearables, journal, name_badge)
+      const productId = item.productId
+      if (!productId) continue
+
+      const { data: productData } = await supabase
+        .from('xvision_products')
+        .select('name, customer_item_number, category')
+        .eq('id', productId)
+        .single()
+
+      // Journal defaults to Grey for processing (not shown on frontend)
+      const isJournal = productData?.category === 'journal'
+      const itemColor = isJournal ? 'Grey' : (item.color || undefined)
+
+      const qty = item.quantity ?? 1
+      for (let i = 0; i < qty; i++) {
+        orderItems.push({
+          order_id: order.id,
+          product_id: productId,
+          product_name: productData?.name || item.productName || 'Unknown',
+          customer_item_number: productData?.customer_item_number || undefined,
+          color: itemColor,
+          size: item.size || undefined,
+          logo_color: item.logo_color || undefined,
+          custom_text: item.category === 'name_badge' ? item.customText : undefined,
         })
-      } else {
-        // Regular product - create one order_item per quantity
-        const qty = cartItem.quantity ?? 1
-        for (let i = 0; i < qty; i++) {
-          orderItems.push({
-            order_id: order.id,
-            product_id: cartItem.productId,
-            product_name: cartItem.productName || productData?.name || 'Unknown Product',
-            customer_item_number: productData?.customer_item_number || null,
-            color: cartItem.color || null,
-            size: getEnglishSize(cartItem.size) ?? cartItem.size ?? null,
-            logo_color: cartItem.logo_color || null
-          })
-        }
       }
     }
 
-    const { error: itemsError } = await supabase
-      .from('cestes_order_items')
-      .insert(orderItems)
-
+    const { error: itemsError } = await supabase.from('xvision_order_items').insert(orderItems)
     if (itemsError) throw itemsError
 
     return NextResponse.json({
       success: true,
       order_number: orderNumber,
-      order_id: order.id
+      order_id: order.id,
     })
-
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Order creation error:', error)
     return NextResponse.json(
-      { error: error.message || 'Failed to create order' },
+      { error: error instanceof Error ? error.message : 'Failed to create order' },
       { status: 500 }
     )
   }
 }
-

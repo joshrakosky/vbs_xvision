@@ -1,10 +1,9 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { LanguageProvider } from "@/lib/languageContext";
 
 export const metadata: Metadata = {
-  title: "VB Spine",
-  description: "Product selection for VB Spine",
+  title: "XVision Quick Store",
+  description: "Product selection for XVision",
 };
 
 export default function RootLayout({
@@ -15,9 +14,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="antialiased bg-gray-50">
-        <LanguageProvider>
-          {children}
-        </LanguageProvider>
+        {children}
       </body>
     </html>
   );
