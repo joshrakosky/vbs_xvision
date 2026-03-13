@@ -164,8 +164,8 @@ export default function WaterBottlesPage() {
               )}
 
               {getThumbnailUrl() && (
-                <div className="mt-4">
-                  <img src={getThumbnailUrl()!} alt={selectedProduct?.name} className="max-h-48 rounded-lg object-contain" />
+                <div className="mt-4 flex justify-center">
+                  <img src={getThumbnailUrl()!} alt={selectedProduct?.name} className="max-h-80 w-auto rounded-lg object-contain" />
                 </div>
               )}
 

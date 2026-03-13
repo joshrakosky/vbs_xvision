@@ -322,8 +322,8 @@ export default function Wearables1Page() {
                       </select>
                     </div>
                     {slot.scrubTopId && scrubTopProduct && getThumbnailUrl(scrubTopProduct, slot.scrubTopColor || 'Black') && (
-                      <div>
-                        <img src={getThumbnailUrl(scrubTopProduct, slot.scrubTopColor || 'Black')!} alt="" className="max-h-40 rounded-lg object-contain" />
+                      <div className="flex justify-center">
+                        <img src={getThumbnailUrl(scrubTopProduct, slot.scrubTopColor || 'Black')!} alt="" className="max-h-80 w-auto rounded-lg object-contain" />
                       </div>
                     )}
                     {slot.scrubTopId && (
@@ -372,8 +372,8 @@ export default function Wearables1Page() {
                       </select>
                     </div>
                     {slot.scrubBottomId && scrubBottomProduct && getThumbnailUrl(scrubBottomProduct, slot.scrubBottomColor || 'Black') && (
-                      <div>
-                        <img src={getThumbnailUrl(scrubBottomProduct, slot.scrubBottomColor || 'Black')!} alt="" className="max-h-40 rounded-lg object-contain" />
+                      <div className="flex justify-center">
+                        <img src={getThumbnailUrl(scrubBottomProduct, slot.scrubBottomColor || 'Black')!} alt="" className="max-h-80 w-auto rounded-lg object-contain" />
                       </div>
                     )}
                     {slot.scrubBottomId && (
