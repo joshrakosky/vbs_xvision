@@ -25,12 +25,12 @@ export default function InstructionsPage() {
     <>
       <AdminExportButton />
       <HelpIcon />
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-indigo-50 py-12 px-4 relative">
-        <div className="max-w-2xl mx-auto">
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-indigo-50 flex items-center justify-center px-4 relative">
+        <div className="max-w-2xl w-full">
           <div className="bg-white rounded-lg shadow-lg p-8">
             <h1 className="text-2xl font-bold text-gray-900 mb-4">How It Works</h1>
             <p className="text-gray-600 mb-6">
-              You will make your selections in the following order. Each step is required unless noted.
+              You will make your selections in the following order.
             </p>
 
             <ul className="space-y-4 mb-8">
