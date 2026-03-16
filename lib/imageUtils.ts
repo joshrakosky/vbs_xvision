@@ -14,6 +14,7 @@ export function normalizeColorForImage(color: string): string {
   // Handle specific known mappings
   const colorMap: Record<string, string> = {
     'Anthracite Heather': 'AnthraciteHeather',
+    'Quiet Shade Grey Heather': 'QuietShadeGreyHeather',
     'Dark Grey Heather': 'DarkGreyHeather',
     'Dark Grey': 'DarkGrey',
     'Graphite Heather': 'GraphiteHeather',

@@ -7,6 +7,8 @@ import { Product } from '@/types'
 import AdminExportButton from '@/components/AdminExportButton'
 import HelpIcon from '@/components/HelpIcon'
 import CartIcon from '@/components/CartIcon'
+import ProductImage from '@/components/ProductImage'
+import WearableSpecButton from '@/components/WearableSpecButton'
 import { getProductImagePath } from '@/lib/imageUtils'
 import { parseSizeOptions } from '@/lib/sizeUtils'
 import { ROUTE_CATEGORIES, getNextRoute, getPrevRoute } from '@/lib/pageConfig'
@@ -213,7 +215,10 @@ export default function Wearables2Page() {
       <div className="min-h-screen bg-gradient-to-br from-purple-50 to-indigo-50 py-12 px-4 relative">
         <div className="max-w-2xl mx-auto">
           <div className="bg-white rounded-lg shadow-lg p-8">
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Select Your Second Wearable</h1>
+            <div className="flex items-center justify-between gap-4 mb-2">
+              <h1 className="text-2xl font-bold text-gray-900">Select Your Second Wearable</h1>
+              {slot.type === 'wearable' && <WearableSpecButton selectedProduct={selectedProduct} />}
+            </div>
             <p className="text-gray-600 mb-6">Choose your second wearable (required). Scrubs (top + bottom) count as one.</p>
 
             {error && (
@@ -272,7 +277,7 @@ export default function Wearables2Page() {
                   {/* Product image between wearable dropdown and size/color */}
                   {selectedProduct && getThumbnailUrl(selectedProduct, slot.color) && (
                     <div>
-                      <img src={getThumbnailUrl(selectedProduct, slot.color)!} alt="" className="max-h-48 rounded-lg object-contain" />
+                      <ProductImage src={getThumbnailUrl(selectedProduct, slot.color)!} alt="" className="max-h-80 w-auto" />
                     </div>
                   )}
                   {selectedProduct?.requires_size && parsedSizes.length > 0 && (
@@ -326,8 +331,8 @@ export default function Wearables2Page() {
                       </select>
                     </div>
                     {slot.scrubTopId && scrubTopProduct && getThumbnailUrl(scrubTopProduct, slot.scrubTopColor || 'Black') && (
-                      <div className="flex justify-center">
-                        <img src={getThumbnailUrl(scrubTopProduct, slot.scrubTopColor || 'Black')!} alt="" className="max-h-80 w-auto rounded-lg object-contain" />
+                      <div>
+                        <ProductImage src={getThumbnailUrl(scrubTopProduct, slot.scrubTopColor || 'Black')!} alt="" className="max-h-80 w-auto" />
                       </div>
                     )}
                     {slot.scrubTopId && (
@@ -376,8 +381,8 @@ export default function Wearables2Page() {
                       </select>
                     </div>
                     {slot.scrubBottomId && scrubBottomProduct && getThumbnailUrl(scrubBottomProduct, slot.scrubBottomColor || 'Black') && (
-                      <div className="flex justify-center">
-                        <img src={getThumbnailUrl(scrubBottomProduct, slot.scrubBottomColor || 'Black')!} alt="" className="max-h-80 w-auto rounded-lg object-contain" />
+                      <div>
+                        <ProductImage src={getThumbnailUrl(scrubBottomProduct, slot.scrubBottomColor || 'Black')!} alt="" className="max-h-80 w-auto" />
                       </div>
                     )}
                     {slot.scrubBottomId && (

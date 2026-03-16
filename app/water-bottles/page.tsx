@@ -7,6 +7,7 @@ import { Product } from '@/types'
 import AdminExportButton from '@/components/AdminExportButton'
 import HelpIcon from '@/components/HelpIcon'
 import CartIcon from '@/components/CartIcon'
+import ProductImage from '@/components/ProductImage'
 import { getProductImagePath } from '@/lib/imageUtils'
 import { parseSizeOptions } from '@/lib/sizeUtils'
 import { ROUTE_CATEGORIES, getNextRoute, getPrevRoute } from '@/lib/pageConfig'
@@ -164,8 +165,8 @@ export default function WaterBottlesPage() {
               )}
 
               {getThumbnailUrl() && (
-                <div className="mt-4 flex justify-center">
-                  <img src={getThumbnailUrl()!} alt={selectedProduct?.name} className="max-h-80 w-auto rounded-lg object-contain" />
+                <div className="mt-4">
+                  <ProductImage src={getThumbnailUrl()!} alt={selectedProduct?.name} className="max-h-80 w-auto" />
                 </div>
               )}
 

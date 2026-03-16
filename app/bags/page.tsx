@@ -8,6 +8,7 @@ import AdminExportButton from '@/components/AdminExportButton'
 import HelpIcon from '@/components/HelpIcon'
 import CartIcon from '@/components/CartIcon'
 import BackpackInfoButton from '@/components/BackpackInfoButton'
+import ProductImage from '@/components/ProductImage'
 import { getProductImagePath } from '@/lib/imageUtils'
 import { parseSizeOptions } from '@/lib/sizeUtils'
 import { ROUTE_CATEGORIES, getNextRoute, getPrevRoute } from '@/lib/pageConfig'
@@ -120,7 +121,7 @@ export default function BagsPage() {
           <div className="bg-white rounded-lg shadow-lg p-8">
             <div className="flex items-center justify-between gap-4 mb-2">
               <h1 className="text-2xl font-bold text-gray-900">Select Your Backpack</h1>
-              <BackpackInfoButton />
+              <BackpackInfoButton selectedProduct={selectedProduct} />
             </div>
             <p className="text-gray-600 mb-6">Choose one backpack (required)</p>
 
@@ -168,8 +169,8 @@ export default function BagsPage() {
               )}
 
               {getThumbnailUrl() && (
-                <div className="mt-4 flex justify-center">
-                  <img src={getThumbnailUrl()!} alt={selectedProduct?.name} className="max-h-80 w-auto rounded-lg object-contain" />
+                <div className="mt-4">
+                  <ProductImage src={getThumbnailUrl()!} alt={selectedProduct?.name} className="max-h-80 w-auto" />
                 </div>
               )}
 

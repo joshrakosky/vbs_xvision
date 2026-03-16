@@ -17,14 +17,14 @@ INSERT INTO xvision_products (name, category, customer_item_number, vendor_ref, 
 ('Men''s Carhartt Gillam Vest', 'vest_mens', 'VBS-VEST-MEN', 'Sanmar', 'CT102286', true, true, ARRAY['Black'], ARRAY['S', 'M', 'L', 'XL', '2XL', '3XL']),
 ('Women''s Carhartt Gillam Vest', 'vest_womens', 'VBS-VEST-WOMEN', 'Sanmar', 'CT104315', true, true, ARRAY['Black'], ARRAY['XS', 'S', 'M', 'L', 'XL', '2XL']),
 -- Polos
-('Women''s TravisMathew Oceanside Heather Polo', 'polo_womens', 'VBS-POLO-WOMEN', 'Sanmar', 'TM1WW002', true, true, ARRAY['Black Heather', 'Purple Sage Heather'], ARRAY['S', 'M', 'L', 'XL', '2XL']),
-('Men''s TravisMathew Oceanside Heather Polo', 'polo_mens', 'VBS-POLO-MEN', 'Sanmar', 'TM1MU412', true, true, ARRAY['Black Heather', 'Purple Sage Heather'], ARRAY['S', 'M', 'L', 'XL', '2XL', '3XL']),
+('Women''s TravisMathew Oceanside Heather Polo', 'polo_womens', 'VBS-POLO-WOMEN', 'Sanmar', 'TM1WW002', true, true, ARRAY['Quiet Shade Grey Heather', 'Purple Sage Heather'], ARRAY['S', 'M', 'L', 'XL', '2XL']),
+('Men''s TravisMathew Oceanside Heather Polo', 'polo_mens', 'VBS-POLO-MEN', 'Sanmar', 'TM1MU412', true, true, ARRAY['Quiet Shade Grey Heather', 'Purple Sage Heather'], ARRAY['S', 'M', 'L', 'XL', '2XL', '3XL']),
 -- Sweatshirts
-('Women''s Puma Golf Cloudspun Crew Neck Sweatshirt', 'sweatshirt_womens', 'VBS-CREW-WOMEN', 'S&S', '599267', true, true, ARRAY['Light Grey Heather', 'Puma Black Heather'], ARRAY['S', 'M', 'L', 'XL', '2XL']),
+('Women''s Puma Golf Cloudspun Crew Neck Sweatshirt', 'sweatshirt_womens', 'VBS-CREW-WOMEN', 'S&S', '599267', true, true, ARRAY['Light Grey Heather'], ARRAY['S', 'M', 'L', 'XL', '2XL']),
 ('Men''s Puma Golf Cloudspun Crew Neck Sweatshirt', 'sweatshirt_mens', 'VBS-CREW-MEN', 'S&S', '531279', true, true, ARRAY['High Rise', 'Puma Black Heather'], ARRAY['S', 'M', 'L', 'XL', '2XL', '3XL']),
 -- Half/Quarter Zip
-('Cutter and Buck Adapt Eco Knit Women''s Half-Zip Pullover', 'half_zip_womens', 'VBS-CB-HZIP-WOMEN', 'Cutter & Buck', 'LCK00128', true, true, ARRAY['Black/College Purple', 'College Purple', 'Polished'], ARRAY['S', 'M', 'L', 'XL', '2XL', '3XL']),
-('Cutter and Buck Adapt Eco Knit Men''s Quarter-Zip', 'half_zip_mens', 'VBS-CB-QZIP-MEN', 'Cutter & Buck', 'MCK01143', true, true, ARRAY['Black/College Purple', 'College Purple', 'Polished'], ARRAY['S', 'M', 'L', 'XL', '2XL', '3XL']),
+('Women''s Cutter and Buck Adapt Eco Knit Half-Zip Pullover', 'half_zip_womens', 'VBS-CB-HZIP-WOMEN', 'Cutter & Buck', 'LCK00128', true, true, ARRAY['Black/College Purple', 'College Purple', 'Polished'], ARRAY['S', 'M', 'L', 'XL', '2XL', '3XL']),
+('Men''s Cutter and Buck Adapt Eco Knit Quarter-Zip', 'half_zip_mens', 'VBS-CB-QZIP-MEN', 'Cutter & Buck', 'MCK01143', true, true, ARRAY['Black/College Purple', 'College Purple', 'Polished'], ARRAY['S', 'M', 'L', 'XL', '2XL', '3XL']),
 -- Scrub Bottoms
 ('FIGS Women''s Kade Cargo Scrub Pants', 'scrub_bottom', 'VBS-SCRB-KADE', 'FIGS', 'KADE', true, true, ARRAY['Black'], ARRAY['XXS', 'XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL', '5XL', '6XL']),
 ('FIGS Women''s Zamora Jogger Scrub Pants', 'scrub_bottom', 'VBS-SCRB-ZAMORA', 'FIGS', 'ZAMORA', true, true, ARRAY['Black'], ARRAY['XXS', 'XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL', '5XL', '6XL']),
