@@ -122,9 +122,8 @@ export default function MiscPage() {
                       onChange={(e) => setWantJournal(e.target.checked)}
                       className="w-5 h-5 rounded border-gray-300 text-[#663399] focus:ring-[#663399]"
                     />
-                    <span className="font-medium text-gray-900">I would like a journal</span>
+                    <span className="font-medium text-gray-900">Journal</span>
                   </label>
-                  <p className="mt-1 text-sm text-gray-600 ml-8">{journalProduct.name}</p>
                 </div>
               )}
 
@@ -137,7 +136,7 @@ export default function MiscPage() {
                       onChange={(e) => setWantBadge(e.target.checked)}
                       className="w-5 h-5 rounded border-gray-300 text-[#663399] focus:ring-[#663399]"
                     />
-                    <span className="font-medium text-gray-900">I would like a name badge</span>
+                    <span className="font-medium text-gray-900">Name Badge</span>
                   </label>
                   {wantBadge && (
                     <div className="mt-4 ml-8">

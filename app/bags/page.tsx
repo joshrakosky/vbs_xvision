@@ -119,11 +119,10 @@ export default function BagsPage() {
       <div className="min-h-screen bg-gradient-to-br from-purple-50 to-indigo-50 py-12 px-4 relative">
         <div className="max-w-2xl mx-auto">
           <div className="bg-white rounded-lg shadow-lg p-8">
-            <div className="flex items-center justify-between gap-4 mb-2">
+            <div className="flex items-center justify-between gap-4 mb-6">
               <h1 className="text-2xl font-bold text-gray-900">Select Your Backpack</h1>
               <BackpackInfoButton selectedProduct={selectedProduct} />
             </div>
-            <p className="text-gray-600 mb-6">Choose one backpack (required)</p>
 
             {error && (
               <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md text-red-700 text-sm">{error}</div>
