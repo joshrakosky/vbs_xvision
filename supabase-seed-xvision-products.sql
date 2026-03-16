@@ -23,7 +23,7 @@ INSERT INTO xvision_products (name, category, customer_item_number, vendor_ref, 
 ('Women''s Puma Golf Cloudspun Crew Neck Sweatshirt', 'sweatshirt_womens', 'VBS-CREW-WOMEN', 'S&S', '599267', true, true, ARRAY['Light Grey Heather'], ARRAY['S', 'M', 'L', 'XL', '2XL']),
 ('Men''s Puma Golf Cloudspun Crew Neck Sweatshirt', 'sweatshirt_mens', 'VBS-CREW-MEN', 'S&S', '531279', true, true, ARRAY['High Rise', 'Puma Black Heather'], ARRAY['S', 'M', 'L', 'XL', '2XL', '3XL']),
 -- Half/Quarter Zip
-('Women''s Cutter and Buck Adapt Eco Knit Half-Zip Pullover', 'half_zip_womens', 'VBS-CB-HZIP-WOMEN', 'Cutter & Buck', 'LCK00128', true, true, ARRAY['Black/College Purple', 'College Purple', 'Polished'], ARRAY['S', 'M', 'L', 'XL', '2XL', '3XL']),
+('Women''s Cutter and Buck Adapt Eco Knit Half-Zip Pullover', 'half_zip_womens', 'VBS-CB-HZIP-WOMEN', 'Cutter & Buck', 'LCK00128', true, true, ARRAY['Black/College Purple', 'College Purple', 'Polished'], ARRAY['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL']),
 ('Men''s Cutter and Buck Adapt Eco Knit Quarter-Zip', 'half_zip_mens', 'VBS-CB-QZIP-MEN', 'Cutter & Buck', 'MCK01143', true, true, ARRAY['Black/College Purple', 'College Purple', 'Polished'], ARRAY['S', 'M', 'L', 'XL', '2XL', '3XL']),
 -- Scrub Bottoms
 ('FIGS Women''s Kade Cargo Scrub Pants', 'scrub_bottom', 'VBS-SCRB-KADE', 'FIGS', 'KADE', true, true, ARRAY['Black'], ARRAY['XXS', 'XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL', '5XL', '6XL']),

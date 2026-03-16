@@ -15,6 +15,7 @@ export function normalizeColorForImage(color: string): string {
   const colorMap: Record<string, string> = {
     'Anthracite Heather': 'AnthraciteHeather',
     'Quiet Shade Grey Heather': 'QuietShadeGreyHeather',
+    'Black/College Purple': 'BlackCollegePurple', // Slash removed for filename only
     'Dark Grey Heather': 'DarkGreyHeather',
     'Dark Grey': 'DarkGrey',
     'Graphite Heather': 'GraphiteHeather',
