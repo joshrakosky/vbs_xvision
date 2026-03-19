@@ -4,8 +4,8 @@
  */
 
 export interface CartItem {
-  productId: string
-  productName: string
+  productId?: string
+  productName?: string
   price?: number
   quantity?: number
   color?: string
@@ -13,6 +13,10 @@ export interface CartItem {
   logo_color?: string
   customText?: string
   category?: string
+  // Image URLs for review page display (computed at add-to-cart)
+  imageUrl?: string
+  scrubTopImageUrl?: string
+  scrubBottomImageUrl?: string
   // Scrubs: one cart entry with both top and bottom
   scrubTopId?: string
   scrubTopName?: string

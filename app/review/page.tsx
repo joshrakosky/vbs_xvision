@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react'
 import AdminExportButton from '@/components/AdminExportButton'
 import HelpIcon from '@/components/HelpIcon'
 import CartIcon from '@/components/CartIcon'
+import ProductImage from '@/components/ProductImage'
 import { loadCart, CartItem } from '@/lib/useCart'
 
 export default function ReviewPage() {
@@ -110,8 +111,38 @@ export default function ReviewPage() {
               <h2 className="text-xl font-semibold text-gray-900 mb-4">Selected Products ({itemCount} items)</h2>
               <div className="space-y-3">
                 {cart.map((item, index) => (
-                  <div key={index} className="bg-gray-50 rounded-lg p-4">
-                    <p className="font-medium text-gray-900">{getItemDisplay(item)}</p>
+                  <div key={index} className="bg-gray-50 rounded-lg p-4 flex items-center gap-4">
+                    {/* Small product image(s) - click to enlarge via ProductImage */}
+                    <div className="flex shrink-0 gap-2">
+                      {item.scrubTopImageUrl && (
+                        <div className="w-16 h-16">
+                          <ProductImage
+                            src={item.scrubTopImageUrl}
+                            alt={item.scrubTopName || 'Scrub top'}
+                            className="h-16 w-16 object-contain"
+                          />
+                        </div>
+                      )}
+                      {item.scrubBottomImageUrl && (
+                        <div className="w-16 h-16">
+                          <ProductImage
+                            src={item.scrubBottomImageUrl}
+                            alt={item.scrubBottomName || 'Scrub bottom'}
+                            className="h-16 w-16 object-contain"
+                          />
+                        </div>
+                      )}
+                      {item.imageUrl && !item.scrubTopId && (
+                        <div className="w-16 h-16">
+                          <ProductImage
+                            src={item.imageUrl}
+                            alt={item.productName || ''}
+                            className="h-16 w-16 object-contain"
+                          />
+                        </div>
+                      )}
+                    </div>
+                    <p className="font-medium text-gray-900 flex-1">{getItemDisplay(item)}</p>
                   </div>
                 ))}
               </div>

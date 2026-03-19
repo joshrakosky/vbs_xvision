@@ -73,6 +73,7 @@ export default function BagsPage() {
       return
     }
 
+    const imageUrl = getThumbnailUrl()
     const updated = cart.filter((i) => i.category !== 'bags')
     updated.push({
       productId: selectedProduct.id,
@@ -81,6 +82,7 @@ export default function BagsPage() {
       color: selectedProduct.requires_color ? selectedColor : undefined,
       size: selectedProduct.requires_size ? selectedSize : undefined,
       category: 'bags',
+      imageUrl: imageUrl || undefined,
     })
     saveCart(updated)
     setError('')

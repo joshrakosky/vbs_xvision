@@ -109,16 +109,24 @@ export default function Wearables2Page() {
     if (slot.type === 'scrub' && slot.scrubTopId && slot.scrubBottomId && slot.scrubTopSize && slot.scrubBottomSize) {
       const topProduct = products.find((p) => p.id === slot.scrubTopId)
       const bottomProduct = products.find((p) => p.id === slot.scrubBottomId)
+      const topColor = slot.scrubTopColor || 'Black'
+      const bottomColor = slot.scrubBottomColor || 'Black'
       return {
         scrubTopId: slot.scrubTopId,
         scrubTopName: topProduct?.name || '',
         scrubTopSize: slot.scrubTopSize,
-        scrubTopColor: slot.scrubTopColor || 'Black',
+        scrubTopColor: topColor,
         scrubBottomId: slot.scrubBottomId,
         scrubBottomName: bottomProduct?.name || '',
         scrubBottomSize: slot.scrubBottomSize,
-        scrubBottomColor: slot.scrubBottomColor || 'Black',
+        scrubBottomColor: bottomColor,
         category: 'scrub_set',
+        scrubTopImageUrl: topProduct?.customer_item_number
+          ? getProductImagePath(topProduct.customer_item_number, topColor) || undefined
+          : undefined,
+        scrubBottomImageUrl: bottomProduct?.customer_item_number
+          ? getProductImagePath(bottomProduct.customer_item_number, bottomColor) || undefined
+          : undefined,
       }
     }
     if (slot.type === 'wearable' && slot.productId) {
@@ -126,6 +134,9 @@ export default function Wearables2Page() {
       if (!p) return null
       if (p.requires_color && !slot.color) return null
       if (p.requires_size && !slot.size) return null
+      const imageUrl = p.customer_item_number && slot.color
+        ? getProductImagePath(p.customer_item_number, slot.color, slot.logo_color) || undefined
+        : undefined
       return {
         productId: slot.productId,
         productName: p.name,
@@ -133,6 +144,7 @@ export default function Wearables2Page() {
         color: slot.color,
         size: slot.size,
         category: p.category,
+        imageUrl,
       }
     }
     return null

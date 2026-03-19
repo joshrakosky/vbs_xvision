@@ -72,6 +72,7 @@ export default function WaterBottlesPage() {
       return
     }
 
+    const imageUrl = getThumbnailUrl()
     const updated = cart.filter((i) => i.category !== 'water_bottle')
     updated.push({
       productId: selectedProduct.id,
@@ -80,6 +81,7 @@ export default function WaterBottlesPage() {
       color: selectedProduct.requires_color ? selectedColor : undefined,
       size: selectedProduct.requires_size ? selectedSize : undefined,
       category: 'water_bottle',
+      imageUrl: imageUrl || undefined,
     })
     saveCart(updated)
     setError('')

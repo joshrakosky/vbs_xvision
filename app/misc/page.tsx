@@ -7,6 +7,7 @@ import { Product } from '@/types'
 import AdminExportButton from '@/components/AdminExportButton'
 import HelpIcon from '@/components/HelpIcon'
 import CartIcon from '@/components/CartIcon'
+import { getProductImagePath } from '@/lib/imageUtils'
 import { ROUTE_CATEGORIES, getNextRoute, getPrevRoute } from '@/lib/pageConfig'
 import { loadCart, saveCart, CartItem } from '@/lib/useCart'
 
@@ -61,20 +62,28 @@ export default function MiscPage() {
 
     let updated = cart.filter((i) => i.category !== 'journal' && i.category !== 'name_badge')
     if (wantJournal && journalProduct) {
+      const journalImageUrl = journalProduct.customer_item_number
+        ? getProductImagePath(journalProduct.customer_item_number, journalProduct.available_colors?.[0] || 'Black')
+        : journalProduct.thumbnail_url || undefined
       updated.push({
         productId: journalProduct.id,
         productName: journalProduct.name,
         quantity: 1,
         category: 'journal',
+        imageUrl: journalImageUrl || undefined,
       })
     }
     if (wantBadge && badgeProduct && badgeText.trim()) {
+      const badgeImageUrl = badgeProduct.customer_item_number
+        ? getProductImagePath(badgeProduct.customer_item_number, badgeProduct.available_colors?.[0] || 'Black')
+        : badgeProduct.thumbnail_url || undefined
       updated.push({
         productId: badgeProduct.id,
         productName: badgeProduct.name,
         quantity: 1,
         category: 'name_badge',
         customText: badgeText.trim(),
+        imageUrl: badgeImageUrl || undefined,
       })
     }
     saveCart(updated)
