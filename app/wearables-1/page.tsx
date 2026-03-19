@@ -135,7 +135,7 @@ export default function Wearables1Page() {
       if (p.requires_color && !slot.color) return null
       if (p.requires_size && !slot.size) return null
       const imageUrl = p.customer_item_number && slot.color
-        ? getProductImagePath(p.customer_item_number, slot.color, slot.logo_color) || undefined
+        ? getProductImagePath(p.customer_item_number, slot.color) || undefined
         : undefined
       return {
         productId: slot.productId,
